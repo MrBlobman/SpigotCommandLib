@@ -13,11 +13,6 @@ public class ArgumentFormatter<T> {
 			(String arg) -> {
 				return arg;
 			});
-	public static final ArgumentFormatter<String> COLORED_STRING = new ArgumentFormatter<String>(
-			"^.*$",
-			(String arg) -> {
-				return ChatColor.translateAlternateColorCodes('&', arg);
-			});
 	public static final ArgumentFormatter<Integer> INTEGER = new ArgumentFormatter<Integer>(
 			"^\\-?\\d+$",
 			(String arg) -> {
@@ -37,6 +32,11 @@ public class ArgumentFormatter<T> {
 			"^\\-?\\d+(\\.(\\d)+)?$",
 			(String arg) -> {
 				return Double.parseDouble(arg);
+			});
+	public static final ArgumentFormatter<Float> FLOAT = new ArgumentFormatter<Float>(
+			"^\\-?\\d+(\\.(\\d)+)?$",
+			(String arg) -> {
+				return Float.parseFloat(arg);
 			});
 	public static final ArgumentFormatter<Color> COLOR = new ArgumentFormatter<Color>(
 			"^(0*)((1?[0-9]?[0-9])|([2][0-4][0-9])|(25[0-5]))," +
