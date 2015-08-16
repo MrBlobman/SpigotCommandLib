@@ -48,7 +48,7 @@ public class SubCommand {
 	 */
 	public boolean canExecute(Permissible caller) {
 		for (String permission : this.permissions) {
-			if (caller.hasPermission(permission) && this.superCommand.canExecute(caller)) return true;
+			if (caller.isOp() || (caller.hasPermission(permission) && this.superCommand.canExecute(caller))) return true;
 		}
 		return false;
 	}

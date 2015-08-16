@@ -30,7 +30,7 @@ public class CommandLib implements Listener {
 	/**
 	 * Register a new handler. Methods that handle specific commands must
 	 * be flagged with the {@code @SubCommandHandler} annotation.
-	 * @see SubCommandHandler
+	 * @see CommandHandler
 	 * @param handler the command handler
 	 */
 	public void registerCommandHandler(Object handler) {
@@ -47,20 +47,24 @@ public class CommandLib implements Listener {
 	@EventHandler(priority=EventPriority.HIGHEST, ignoreCancelled=true)
 	private void onConsoleCommand(ServerCommandEvent event) {
 		try {
-			registry.handleCommand(event.getSender(), parseCommandString(event.getCommand()));
+			if (registry.handleCommand(event.getSender(), parseCommandString(event.getCommand()))) {
+				event.setCancelled(true);
+			}
 		} catch (Exception e) {
 			event.getSender().sendMessage(ChatColor.RED + "An internal error has occured. Please contact a server administrator.");
-			hook.getLogger().log(Level.SEVERE, e.getLocalizedMessage());
+			hook.getLogger().log(Level.SEVERE, "Error executing "+event.getCommand(), e);
 		}
 	}
 
 	@EventHandler(priority=EventPriority.HIGHEST, ignoreCancelled=true)
 	private void onPlayerCommand(PlayerCommandPreprocessEvent event) {
 		try {
-			registry.handleCommand(event.getPlayer(), parseCommandString(event.getMessage()));
+			if (registry.handleCommand(event.getPlayer(), parseCommandString(event.getMessage()))) {
+				event.setCancelled(true);
+			}
 		} catch (Exception e) {
 			event.getPlayer().sendMessage(ChatColor.RED + "An internal error has occured. Please contact a server administrator.");
-			hook.getLogger().log(Level.SEVERE, e.getLocalizedMessage());
+			hook.getLogger().log(Level.SEVERE, "Error executing "+event.getMessage(), e);
 		}
 	}
 	
@@ -73,9 +77,9 @@ public class CommandLib implements Listener {
 		while (m.find()) {
 			if (m.group(2) != null) {
 				matches.add(m.group(2));
-		    } else if (m.group(3) != null) {
-		    	matches.add(m.group(3));
-		    }
+			} else if (m.group(3) != null) {
+				matches.add(m.group(3));
+			}
 		}
 		return matches.toArray(new String[matches.size()]);
 	}

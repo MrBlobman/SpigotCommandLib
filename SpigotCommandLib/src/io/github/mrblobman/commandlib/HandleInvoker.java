@@ -80,7 +80,13 @@ public class HandleInvoker {
 				}
 			}
 		}
-		method.invoke(invocationTarget, sender, params.toArray());
+		int i = 0;
+		Object[] callParams = new Object[params.size()+1];
+		callParams[i++] = sender;
+		for (Object param : params) {
+			callParams[i++] = param;
+		}
+		method.invoke(invocationTarget, callParams);
 	}
 	
 	public void sendIncorrectSenderMessage(CommandSender sender) {
@@ -88,11 +94,10 @@ public class HandleInvoker {
 	}
 	
 	public void sendUsage(CommandSender sender) {
-		StringBuilder strBuilder = new StringBuilder("/");
-		strBuilder.append(this.subCommand);
+		StringBuilder strBuilder = new StringBuilder(this.subCommand.toString());
 		for (int i = 0; i < this.minArgsRequired; i++) {
 			strBuilder.append(" <");
-			strBuilder.append(this.argNames);
+			strBuilder.append(this.argNames[i]);
 			strBuilder.append(">");
 		}
 		if (this.containsVarargs) {
@@ -125,10 +130,9 @@ public class HandleInvoker {
 				}
 				builder.event(new HoverEvent(HoverEvent.Action.SHOW_ITEM, formatTextToItem(info)));
 			}
-			sender.sendMessage(ChatColor.RED+"Incorrect usage. Click the command for the format to be pasted in your chat box and hover an arg for more info on it.");
+			//sender.sendMessage(ChatColor.RED+"Incorrect usage. Click the command for the format to be pasted in your chat box and hover an arg for more info on it.");
 			((Player) sender).spigot().sendMessage(builder.create());
 		} else {
-			sender.sendMessage(ChatColor.RED+"Incorrect usage.");
 			sender.sendMessage(ChatColor.YELLOW+strBuilder.toString());
 		}
 	}

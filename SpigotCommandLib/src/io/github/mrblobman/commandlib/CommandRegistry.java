@@ -26,7 +26,7 @@ public class CommandRegistry {
 	public void register(Object commandHandler) {
 		MethodLoop:
 			for (Method method : commandHandler.getClass().getMethods()) {
-				SubCommandHandler handlerAnnotation = method.getAnnotation(SubCommandHandler.class);
+				CommandHandler handlerAnnotation = method.getAnnotation(CommandHandler.class);
 				//Move on, this method isnt annotated
 				if (handlerAnnotation == null) continue MethodLoop;
 				//Check that min requirements are met
@@ -38,22 +38,22 @@ public class CommandRegistry {
 				//Build parsing data arrays
 				String[] argNames = new String[methodParams.length-1];
 				ArgumentFormatter<?>[] formatters = new ArgumentFormatter<?>[methodParams.length-1];
-				for (int i = 1; i < methodParams.length-(method.isVarArgs() ? 2 : 1); i++) {
-					argNames[i-1] = methodParams[i-1].getName();
-					Class<?> paramType = methodParams[i].getType().getClass();
-					if (paramType.equals(String.class)) {
+				for (int i = 1; i < methodParams.length-(method.isVarArgs() ? 1 : 0); i++) {
+					argNames[i-1] = methodParams[i].isNamePresent() ? methodParams[i].getName() : "arg"+(i-1);
+					Class<?> paramType = methodParams[i].getType();
+					if (String.class.isAssignableFrom(paramType)) {
 						formatters[i-1] = ArgumentFormatter.STRING;
-					} else if (paramType.equals(Integer.class) || paramType.equals(Integer.TYPE)) {
+					} else if (Integer.class.isAssignableFrom(paramType) || Integer.TYPE.isAssignableFrom(paramType)) {
 						formatters[i-1] = ArgumentFormatter.INTEGER;
-					} else if (paramType.equals(Double.class) || paramType.equals(Double.TYPE)) {
+					} else if (Double.class.isAssignableFrom(paramType) || Double.TYPE.isAssignableFrom(paramType)) {
 						formatters[i-1] = ArgumentFormatter.DOUBLE;
-					} else if (paramType.equals(Long.class) || paramType.equals(Long.TYPE)) {
+					} else if (Long.class.isAssignableFrom(paramType) || Long.TYPE.isAssignableFrom(paramType)) {
 						formatters[i-1] = ArgumentFormatter.LONG;
-					} else if (paramType.equals(Short.class) || paramType.equals(Short.TYPE)) {
+					} else if (Short.class.isAssignableFrom(paramType) || Short.TYPE.isAssignableFrom(paramType)) {
 						formatters[i-1] = ArgumentFormatter.SHORT;
-					} else if (paramType.equals(Float.class) || paramType.equals(Float.TYPE)) {
+					} else if (Float.class.isAssignableFrom(paramType) || Float.TYPE.isAssignableFrom(paramType)) {
 						formatters[i-1] = ArgumentFormatter.FLOAT;
-					} else if (paramType.equals(Color.class)) {
+					} else if (Color.class.isAssignableFrom(paramType)) {
 						formatters[i-1] = ArgumentFormatter.COLOR;
 					} else {
 						Bukkit.getLogger().log(Level.WARNING, "Cannot register method "+method.getName()+". Unknown parameter parse type ("+paramType.getName()+"). Accepted types are String, Integer, Long, Short, Double, Float and org.bukkit.Color.");
@@ -61,36 +61,36 @@ public class CommandRegistry {
 					}
 				}
 				if (method.isVarArgs()) {
-					argNames[methodParams.length-2] = methodParams[methodParams.length-2].getName();
+					argNames[methodParams.length-2] = methodParams[methodParams.length-2].isNamePresent() ? methodParams[methodParams.length-2].getName() : "arg"+(methodParams.length-2);
 					//We need to handle the last arg differently because it is a var arg
-					Class<?> paramType = methodParams[methodParams.length-2].getType().getClass();
-					if (paramType.equals(String[].class)) {
-						formatters[formatters.length-2] = ArgumentFormatter.STRING;
-					} else if (paramType.equals(Integer[].class) || paramType.equals(Integer.TYPE)) {
-						formatters[formatters.length-2] = ArgumentFormatter.INTEGER;
-					} else if (paramType.equals(Double.class) || paramType.equals(Double.TYPE)) {
-						formatters[formatters.length-2] = ArgumentFormatter.DOUBLE;
-					} else if (paramType.equals(Long.class) || paramType.equals(Long.TYPE)) {
-						formatters[formatters.length-2] = ArgumentFormatter.LONG;
-					} else if (paramType.equals(Short.class) || paramType.equals(Short.TYPE)) {
-						formatters[formatters.length-2] = ArgumentFormatter.SHORT;
-					} else if (paramType.equals(Float.class) || paramType.equals(Float.TYPE)) {
-						formatters[formatters.length-2] = ArgumentFormatter.FLOAT;
-					} else if (paramType.equals(Color.class)) {
-						formatters[formatters.length-2] = ArgumentFormatter.COLOR;
+					Class<?> paramType = methodParams[methodParams.length-2].getType();
+					if (String[].class.isAssignableFrom(paramType)) {
+						formatters[methodParams.length-2] = ArgumentFormatter.STRING;
+					} else if (Integer[].class.isAssignableFrom(paramType) || Integer.TYPE.isAssignableFrom(paramType)) {
+						formatters[methodParams.length-2] = ArgumentFormatter.INTEGER;
+					} else if (Double.class.isAssignableFrom(paramType) || Double.TYPE.isAssignableFrom(paramType)) {
+						formatters[methodParams.length-2] = ArgumentFormatter.DOUBLE;
+					} else if (Long.class.isAssignableFrom(paramType) || Long.TYPE.isAssignableFrom(paramType)) {
+						formatters[methodParams.length-2] = ArgumentFormatter.LONG;
+					} else if (Short.class.isAssignableFrom(paramType) || Short.TYPE.isAssignableFrom(paramType)) {
+						formatters[methodParams.length-2] = ArgumentFormatter.SHORT;
+					} else if (Float.class.isAssignableFrom(paramType) || Float.TYPE.isAssignableFrom(paramType)) {
+						formatters[methodParams.length-2] = ArgumentFormatter.FLOAT;
+					} else if (Color.class.isAssignableFrom(paramType)) {
+						formatters[methodParams.length-2] = ArgumentFormatter.COLOR;
 					} else {
 						Bukkit.getLogger().log(Level.WARNING, "Cannot register method "+method.getName()+". Unknown parameter parse type ("+paramType.getName()+"). Accepted types are String, Integer, Long, Short, Double, Float and org.bukkit.Color.");
 						continue MethodLoop;
 					}
 				}
 				//Verify the sender type is valid
-				Class<?> senderType = methodParams[0].getClass();
-				if (!senderType.equals(CommandSender.class) || !senderType.equals(Player.class)) {
+				Class<?> senderType = methodParams[0].getType();
+				if (!CommandSender.class.isAssignableFrom(senderType) && !Player.class.isAssignableFrom(senderType)) {
 					Bukkit.getLogger().log(Level.WARNING, "Cannot register method "+method.getName()+". Invalid sender type "+senderType.getSimpleName()+". Must be CommandSender or Player.");
 					continue MethodLoop;
 				}
 				//Register the sub command
-				SubCommand cmd = addSubCommand(handlerAnnotation.subCommand(), handlerAnnotation.permission());
+				SubCommand cmd = addSubCommand(handlerAnnotation.command(), handlerAnnotation.permission());
 				if (cmd == null) {
 					Bukkit.getLogger().log(Level.WARNING, "Cannot register method "+method.getName()+". Invalid sub command.");
 					continue MethodLoop;
@@ -101,6 +101,7 @@ public class CommandRegistry {
 				if (method.isVarArgs()) minArgs--;
 				//Finally create the invoker
 				this.invokers.put(cmd, new HandleInvoker(cmd, commandHandler, method, senderType, argNames, formatters, minArgs));
+				Bukkit.getLogger().log(Level.INFO, "Successfully registered "+method.getName()+" in "+commandHandler.getClass().getSimpleName()+" for "+cmd.toString());
 			}
 	}
 	
@@ -129,6 +130,7 @@ public class CommandRegistry {
 				subCmd = new SubCommand(subCommandAliases[0], new String[0], permission, superCmd);
 			}
 			subCmd.addPermission(permission);
+			superCmd.addSubCommand(subCmd);
 			superCmd = subCmd;
 		}
 		return superCmd;
@@ -156,15 +158,22 @@ public class CommandRegistry {
 		} else {
 			base = new SubCommand(baseAliases[0], new String[0], permission, null);
 		}
+		this.baseCommands.put(baseAliases[0].toLowerCase(), base);
 		return base;
 	}
 	
-	public void handleCommand(CommandSender sender, String[] command) throws Exception {
+	/**
+	 * 
+	 * @param sender
+	 * @param command
+	 * @return true iff the base command is registered with this registry and an attempt to execute was preformed
+	 * @throws Exception
+	 */
+	public boolean handleCommand(CommandSender sender, String[] command) throws Exception {
 		if (command == null || command.length < 1) throw new IllegalArgumentException("command was empty");
 		SubCommand cmd = this.getBaseCommand(command[0]);
 		if (cmd == null) {
-			displayHelp(sender, null);
-			return;
+			return false;
 		}
 		SubCommand next;
 		int i;
@@ -180,9 +189,11 @@ public class CommandRegistry {
 		HandleInvoker invoker = this.invokers.get(cmd);
 		if (invoker == null) {
 			displayHelp(sender, cmd);
-			return;
+			return true;
 		}
-		invoker.invoke(sender, i > command.length-1 ? Arrays.copyOfRange(command, i, command.length) : new String[0]);
+		//i is index of first arg
+		invoker.invoke(sender, i < command.length ? Arrays.copyOfRange(command, i, command.length) : new String[0]);
+		return true;
 	}
 	
 	public void displayHelp(CommandSender sender, @Nullable SubCommand cmdGiven) {
