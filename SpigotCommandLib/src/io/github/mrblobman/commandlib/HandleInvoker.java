@@ -1,6 +1,5 @@
 package io.github.mrblobman.commandlib;
 
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
@@ -13,9 +12,10 @@ import net.md_5.bungee.api.chat.HoverEvent;
 import net.md_5.bungee.api.chat.TextComponent;
 
 import org.bukkit.command.CommandSender;
+import org.bukkit.entity.Player;
 
-public class HandleInvoker {
-	private String subCommand;
+public class HandleInvoker {	
+	private SubCommand subCommand;
 	
 	private Object invocationTarget;
 	private Method method;
@@ -29,6 +29,24 @@ public class HandleInvoker {
 	private int minArgsRequired;
 	private boolean containsVarargs;
 	
+	HandleInvoker(SubCommand subCmd, Object invocationTarget, Method cmdHandler, Class<?> senderType, String[] argNames, ArgumentFormatter<?>[] argFormatters, int minArgsRequired) {
+		this.subCommand = subCmd;
+		this.invocationTarget = invocationTarget;
+		this.method = cmdHandler;
+		this.senderType = senderType;
+		this.argNames = argNames;
+		this.argFormatters = argFormatters;
+		this.minArgsRequired = minArgsRequired;
+		this.containsVarargs = method.isVarArgs();
+	}
+	
+	/**
+	 * Invoke this handler with the given arguments. The args are all String args that follow the sub command.<br>
+	 * Ex: /baseCmd sub1 sub2 arg0 arg1 arg2
+	 * @param sender the command sender. If this type doesn't match the sender type it will inform the sender.
+	 * @param args the args in which to invoke the handler with. 
+	 * @throws Exception if the method invocation fails for a non user based error, user based errors will directly be messaged to the player.
+	 */
 	public void invoke(CommandSender sender, String[] args) throws Exception {
 		if (!senderType.isInstance(sender)) {
 			//Wrong sender type, cannot invoke
@@ -70,15 +88,48 @@ public class HandleInvoker {
 	}
 	
 	public void sendUsage(CommandSender sender) {
-		String[] usage = new String[]{ChatColor.RED+"Incorrect usage. Click the command for the format to be pasted in your chat box and hover an arg for more info on it.", null};
-		ComponentBuilder builder = new ComponentBuilder(this.subCommand);
-		builder.color(ChatColor.RED);
-		builder.event(new ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, ""));
-		builder.event(new HoverEvent(HoverEvent.Action.SHOW_ITEM, formatTextToItem(ChatColor.YELLOW+this.subCommand, 
-																				   ChatColor.GRAY+"Click to paste this command's", 
-																				   ChatColor.GRAY+"format in your chat box.")));
-		for (String argName : this.argNames) {
-			
+		StringBuilder strBuilder = new StringBuilder("/");
+		strBuilder.append(this.subCommand);
+		for (int i = 0; i < this.minArgsRequired; i++) {
+			strBuilder.append(" <");
+			strBuilder.append(this.argNames);
+			strBuilder.append(">");
+		}
+		if (this.containsVarargs) {
+			strBuilder.append(" [");
+			strBuilder.append(this.argNames[this.argNames.length-1]);
+			strBuilder.append("]");
+		}
+		if (sender instanceof Player) {
+			ComponentBuilder builder = new ComponentBuilder(this.subCommand.toString());
+			builder.color(ChatColor.RED);
+			builder.event(new ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, strBuilder.toString()));
+			builder.event(new HoverEvent(HoverEvent.Action.SHOW_ITEM, formatTextToItem(ChatColor.YELLOW+this.subCommand.toString(), 
+																					   ChatColor.GRAY+"Click to paste this command's", 
+																					   ChatColor.GRAY+"format in your chat box.")));
+			for (int i = 0; i < this.minArgsRequired; i++) {
+				builder.append(" <"+argNames[i]+">");
+				String[] info = new String[argFormatters[i].getTypeDesc().length+1];
+				info[0] = ChatColor.YELLOW + argFormatters[i].getTypeName();
+				for (int j = 1; j < info.length; j++) {
+					info[j] = ChatColor.GRAY+argFormatters[i].getTypeDesc()[j-1];
+				}
+				builder.event(new HoverEvent(HoverEvent.Action.SHOW_ITEM, formatTextToItem(info)));
+			}
+			if (this.containsVarargs) {
+				builder.append(" ["+argNames[argNames.length-1]+"]");
+				String[] info = new String[argFormatters[argNames.length-1].getTypeDesc().length+1];
+				info[0] = ChatColor.YELLOW + argFormatters[argNames.length-1].getTypeName();
+				for (int j = 1; j < info.length; j++) {
+					info[j] = ChatColor.GRAY+argFormatters[argNames.length-1].getTypeDesc()[j-1];
+				}
+				builder.event(new HoverEvent(HoverEvent.Action.SHOW_ITEM, formatTextToItem(info)));
+			}
+			sender.sendMessage(ChatColor.RED+"Incorrect usage. Click the command for the format to be pasted in your chat box and hover an arg for more info on it.");
+			((Player) sender).spigot().sendMessage(builder.create());
+		} else {
+			sender.sendMessage(ChatColor.RED+"Incorrect usage.");
+			sender.sendMessage(ChatColor.YELLOW+strBuilder.toString());
 		}
 	}
 	
@@ -102,22 +153,5 @@ public class HandleInvoker {
 			info = info + "}";
 		}
 		return new BaseComponent[]{new TextComponent("{id:1,tag:{"+info+"}}")};
-	}
-	
-	//TEST TEST TEST!@@
-	public static class Test {
-		public void method(String one, Integer two) {
-			System.out.println(one);
-			System.out.println(two);
-		}
-	}
-	public static void main(String[] args) {
-		try {
-			Method m = Test.class.getDeclaredMethod("method", String.class, Integer.class);
-			Object[] testArr = new Object[]{"test1", 2};
-			m.invoke(new Test(), testArr);
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
 	}
 }
