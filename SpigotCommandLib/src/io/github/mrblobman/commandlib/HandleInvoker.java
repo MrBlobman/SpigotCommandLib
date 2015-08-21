@@ -1,5 +1,6 @@
 package io.github.mrblobman.commandlib;
 
+import java.lang.reflect.Array;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
@@ -53,7 +54,7 @@ public class HandleInvoker {
 			sendIncorrectSenderMessage(sender);
 			return;
 		}
-		if (args.length != minArgsRequired) {
+		if (args.length < minArgsRequired) {
 			//Not enough args, send usage
 			sendUsage(sender);
 			return;
@@ -69,16 +70,19 @@ public class HandleInvoker {
 			}
 		}
 		if (containsVarargs) {
+			@SuppressWarnings("unchecked")
+			List<Object> varArgs = (List<Object>) argFormatters[minArgsRequired].createTypedList();
 			//Handle varargs
 			for (int i = minArgsRequired; i < args.length; i++) {
 				if (argFormatters[minArgsRequired].canBeParsedFrom(args[i])) {
-					params.add(argFormatters[minArgsRequired].parse(args[i]));
+					varArgs.add(argFormatters[minArgsRequired].parse(args[i]));
 				} else {
 					//Invalid type param
 					sendUsage(sender);
 					return;
 				}
 			}
+			params.add(varArgs.toArray((Object[]) Array.newInstance(argFormatters[minArgsRequired].getParseType(), varArgs.size())));
 		}
 		int i = 0;
 		Object[] callParams = new Object[params.size()+1];

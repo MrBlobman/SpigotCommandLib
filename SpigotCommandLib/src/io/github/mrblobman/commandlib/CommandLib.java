@@ -1,30 +1,17 @@
 package io.github.mrblobman.commandlib;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
-import net.md_5.bungee.api.ChatColor;
-
-import org.bukkit.Bukkit;
-import org.bukkit.event.EventHandler;
-import org.bukkit.event.EventPriority;
-import org.bukkit.event.Listener;
-import org.bukkit.event.player.PlayerCommandPreprocessEvent;
-import org.bukkit.event.server.ServerCommandEvent;
+import org.bukkit.command.CommandSender;
 import org.bukkit.plugin.Plugin;
 
-public class CommandLib implements Listener {
-	private static Pattern argPattern = Pattern.compile("(?:(['\"])(.*?)(?<!\\\\)(?>\\\\\\\\)*\\1|([^\\s]+))");
+public class CommandLib {
 	private CommandRegistry registry;
 	private Plugin hook;
 	
-	public CommandLib (Plugin hook) {
+	public CommandLib (Plugin hook) throws InstantiationException {
 		this.hook = hook;
-		this.registry = new CommandRegistry();
-		Bukkit.getPluginManager().registerEvents(this, hook);
+		this.registry = new CommandRegistry(this);
+		//Bukkit.getPluginManager().registerEvents(this, hook);
 	}
 	
 	/**
@@ -44,43 +31,11 @@ public class CommandLib implements Listener {
 		return this.hook;
 	}
 	
-	@EventHandler(priority=EventPriority.HIGHEST, ignoreCancelled=true)
-	private void onConsoleCommand(ServerCommandEvent event) {
-		try {
-			if (registry.handleCommand(event.getSender(), parseCommandString(event.getCommand()))) {
-				event.setCancelled(true);
-			}
-		} catch (Exception e) {
-			event.getSender().sendMessage(ChatColor.RED + "An internal error has occured. Please contact a server administrator.");
-			hook.getLogger().log(Level.SEVERE, "Error executing "+event.getCommand(), e);
-		}
-	}
-
-	@EventHandler(priority=EventPriority.HIGHEST, ignoreCancelled=true)
-	private void onPlayerCommand(PlayerCommandPreprocessEvent event) {
-		try {
-			if (registry.handleCommand(event.getPlayer(), parseCommandString(event.getMessage()))) {
-				event.setCancelled(true);
-			}
-		} catch (Exception e) {
-			event.getPlayer().sendMessage(ChatColor.RED + "An internal error has occured. Please contact a server administrator.");
-			hook.getLogger().log(Level.SEVERE, "Error executing "+event.getMessage(), e);
-		}
+	protected void execute(CommandSender sender, String[] command) throws Exception {
+		registry.handleCommand(sender, command);
 	}
 	
-	private String[] parseCommandString(String command) {
-		if (command.startsWith("/")) {
-			command = command.substring(1);
-		}
-		List<String> matches = new ArrayList<String>();
-		Matcher m = argPattern.matcher(command);
-		while (m.find()) {
-			if (m.group(2) != null) {
-				matches.add(m.group(2));
-			} else if (m.group(3) != null) {
-				matches.add(m.group(3));
-			}
-		}
-		return matches.toArray(new String[matches.size()]);
+	protected List<String> tabComplete(CommandSender sender, String[] command) {
+		return registry.getPossibleSubCommands(command);
 	}
 }

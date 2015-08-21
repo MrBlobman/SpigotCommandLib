@@ -1,5 +1,7 @@
 package io.github.mrblobman.commandlib;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.regex.Pattern;
 
 import org.bukkit.Color;
@@ -7,6 +9,7 @@ import org.bukkit.Color;
 public class ArgumentFormatter<T> {
 	
 	public static final ArgumentFormatter<String> STRING = new ArgumentFormatter<String>(
+			String.class,
 			"^.*$",
 			(String arg) -> {
 				return arg;
@@ -15,51 +18,57 @@ public class ArgumentFormatter<T> {
 			"A sequence of characters.",
 			"Ex: IAmAString");
 	public static final ArgumentFormatter<Integer> INTEGER = new ArgumentFormatter<Integer>(
+			Integer.class,
 			"^\\-?\\d+$",
 			(String arg) -> {
 				return Integer.parseInt(arg);
 			},
 			"Integer",
 			"A sequence of digits 0-9 with",
-			"an optional starting \"-\" sign.",
+			"an optional starting - sign.",
 			"Ex: -4536 (Min: "+Integer.MIN_VALUE+" Max: "+Integer.MAX_VALUE+")");
 	public static final ArgumentFormatter<Long> LONG = new ArgumentFormatter<Long>(
+			Long.class,
 			"^\\-?\\d+$",
 			(String arg) -> {
 				return Long.parseLong(arg);
 			},
 			"Long",
 			"A sequence of digits 0-9 with",
-			"an optional starting \"-\" sign.",
+			"an optional starting - sign.",
 			"Ex: -9287 (Min: "+Long.MIN_VALUE+" Max: "+Long.MAX_VALUE+")");
 	public static final ArgumentFormatter<Short> SHORT = new ArgumentFormatter<Short>(
+			Short.class,
 			"^\\-?\\d+$",
 			(String arg) -> {
 				return Short.parseShort(arg);
 			},
 			"Short",
 			"A sequence of digits 0-9 with",
-			"an optional starting \"-\" sign.",
+			"an optional starting - sign.",
 			"Ex: -4536 (Min: "+Short.MIN_VALUE+" Max: "+Short.MAX_VALUE+")");
 	public static final ArgumentFormatter<Double> DOUBLE = new ArgumentFormatter<Double>(
+			Double.class,
 			"^\\-?\\d+(\\.(\\d)+)?$",
 			(String arg) -> {
 				return Double.parseDouble(arg);
 			},
 			"Double",
 			"A sequence of digits 0-9 with an optional",
-			"starting \"-\" sign and decimal portion.",
+			"starting - sign and decimal portion.",
 			"Ex: -93.2 (Min: "+Double.MIN_VALUE+" Max: "+Double.MAX_VALUE+")");
 	public static final ArgumentFormatter<Float> FLOAT = new ArgumentFormatter<Float>(
+			Float.class,
 			"^\\-?\\d+(\\.(\\d)+)?$",
 			(String arg) -> {
 				return Float.parseFloat(arg);
 			},
 			"Float",
 			"A sequence of digits 0-9 with an optional",
-			"starting \"-\" sign and decimal portion.",
+			"starting - sign and decimal portion.",
 			"Ex: -2.883 (Min: "+Float.MIN_VALUE+" Max: "+Float.MAX_VALUE+")");
 	public static final ArgumentFormatter<Color> COLOR = new ArgumentFormatter<Color>(
+			Color.class,
 			"^(0*)((1?[0-9]?[0-9])|([2][0-4][0-9])|(25[0-5]))," +
 			"(0*)((1?[0-9]?[0-9])|([2][0-4][0-9])|(25[0-5]))," + 
 			"(0*)((1?[0-9]?[0-9])|([2][0-4][0-9])|(25[0-5]))$",
@@ -81,8 +90,10 @@ public class ArgumentFormatter<T> {
 	private ArgumentParser<T> parser;
 	private String typeName;
 	private String[] typeDesc;
+	private Class<T> formatType;
 	
-	private ArgumentFormatter(String pattern, ArgumentParser<T> parser, String typeName, String... typeDesc) {
+	private ArgumentFormatter(Class<T> parseType, String pattern, ArgumentParser<T> parser, String typeName, String... typeDesc) {
+		this.formatType = parseType;
 		this.pattern = Pattern.compile(pattern);
 		this.parser = parser;
 		this.typeName = typeName;
@@ -121,5 +132,21 @@ public class ArgumentFormatter<T> {
 	 */
 	public String[] getTypeDesc() {
 		return this.typeDesc;
+	}
+	
+	/**
+	 * Create and return a {@link java.util.List} with the type of this formatter.
+	 * @return the created list.
+	 */
+	public List<T> createTypedList() {
+		return new ArrayList<T>();
+	}
+	
+	/**
+	 * Get the type that this formatter parses.
+	 * @return
+	 */
+	public Class<T> getParseType() {
+		return this.formatType;
 	}
 }

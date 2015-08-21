@@ -1,9 +1,12 @@
 package io.github.mrblobman.commandlib;
 
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 
@@ -13,15 +16,35 @@ import net.md_5.bungee.api.ChatColor;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Color;
+import org.bukkit.command.CommandMap;
 import org.bukkit.command.CommandSender;
-import org.bukkit.entity.Player;
 
 public class CommandRegistry {
 	private Map<String, SubCommand> baseCommands = new HashMap<String, SubCommand>();
 	private Map<SubCommand, HandleInvoker> invokers = new HashMap<SubCommand, HandleInvoker>();
+	private CommandMap bukkitCommandMap;
+	private CommandLib lib;
 	
 	//Seal the class
-	CommandRegistry() {}
+	CommandRegistry(CommandLib lib) throws InstantiationException {
+		Method commandMap;
+		try {
+			commandMap = Bukkit.getServer().getClass().getMethod("getCommandMap");
+		} catch (NoSuchMethodException | SecurityException e) {
+			throw new InstantiationException("Could not grab the command map from the bukkit server. "+e.getLocalizedMessage());
+		}
+		Object rawMap;
+		try {
+			rawMap = commandMap.invoke(Bukkit.getServer());
+		} catch (InvocationTargetException | IllegalAccessException | IllegalArgumentException e) {
+			throw new InstantiationException("Could not grab the command map from the bukkit server. "+e.getLocalizedMessage());
+		}
+		if (rawMap == null || !(rawMap instanceof CommandMap)) {
+			throw new InstantiationException("Could not grab the command map from the bukkit server.");
+		}
+		bukkitCommandMap = (CommandMap) rawMap;
+		this.lib = lib;
+	}
 	
 	public void register(Object commandHandler) {
 		MethodLoop:
@@ -61,22 +84,22 @@ public class CommandRegistry {
 					}
 				}
 				if (method.isVarArgs()) {
-					argNames[methodParams.length-2] = methodParams[methodParams.length-2].isNamePresent() ? methodParams[methodParams.length-2].getName() : "arg"+(methodParams.length-2);
+					argNames[methodParams.length-2] = methodParams[methodParams.length-1].isNamePresent() ? methodParams[methodParams.length-1].getName() : "arg"+(methodParams.length-1);
 					//We need to handle the last arg differently because it is a var arg
-					Class<?> paramType = methodParams[methodParams.length-2].getType();
+					Class<?> paramType = methodParams[methodParams.length-1].getType();
 					if (String[].class.isAssignableFrom(paramType)) {
 						formatters[methodParams.length-2] = ArgumentFormatter.STRING;
-					} else if (Integer[].class.isAssignableFrom(paramType) || Integer.TYPE.isAssignableFrom(paramType)) {
+					} else if (Integer[].class.isAssignableFrom(paramType) || int[].class.isAssignableFrom(paramType)) {
 						formatters[methodParams.length-2] = ArgumentFormatter.INTEGER;
-					} else if (Double.class.isAssignableFrom(paramType) || Double.TYPE.isAssignableFrom(paramType)) {
+					} else if (Double[].class.isAssignableFrom(paramType) || double[].class.isAssignableFrom(paramType)) {
 						formatters[methodParams.length-2] = ArgumentFormatter.DOUBLE;
-					} else if (Long.class.isAssignableFrom(paramType) || Long.TYPE.isAssignableFrom(paramType)) {
+					} else if (Long[].class.isAssignableFrom(paramType) || long[].class.isAssignableFrom(paramType)) {
 						formatters[methodParams.length-2] = ArgumentFormatter.LONG;
-					} else if (Short.class.isAssignableFrom(paramType) || Short.TYPE.isAssignableFrom(paramType)) {
+					} else if (Short[].class.isAssignableFrom(paramType) || short[].class.isAssignableFrom(paramType)) {
 						formatters[methodParams.length-2] = ArgumentFormatter.SHORT;
-					} else if (Float.class.isAssignableFrom(paramType) || Float.TYPE.isAssignableFrom(paramType)) {
+					} else if (Float[].class.isAssignableFrom(paramType) || float[].class.isAssignableFrom(paramType)) {
 						formatters[methodParams.length-2] = ArgumentFormatter.FLOAT;
-					} else if (Color.class.isAssignableFrom(paramType)) {
+					} else if (Color[].class.isAssignableFrom(paramType)) {
 						formatters[methodParams.length-2] = ArgumentFormatter.COLOR;
 					} else {
 						Bukkit.getLogger().log(Level.WARNING, "Cannot register method "+method.getName()+". Unknown parameter parse type ("+paramType.getName()+"). Accepted types are String, Integer, Long, Short, Double, Float and org.bukkit.Color.");
@@ -85,8 +108,8 @@ public class CommandRegistry {
 				}
 				//Verify the sender type is valid
 				Class<?> senderType = methodParams[0].getType();
-				if (!CommandSender.class.isAssignableFrom(senderType) && !Player.class.isAssignableFrom(senderType)) {
-					Bukkit.getLogger().log(Level.WARNING, "Cannot register method "+method.getName()+". Invalid sender type "+senderType.getSimpleName()+". Must be CommandSender or Player.");
+				if (!CommandSender.class.isAssignableFrom(senderType)) {
+					Bukkit.getLogger().log(Level.WARNING, "Cannot register method "+method.getName()+". Invalid sender type "+senderType.getSimpleName()+". Must be accessible from org.bukkit.CommandSender.");
 					continue MethodLoop;
 				}
 				//Register the sub command
@@ -136,6 +159,32 @@ public class CommandRegistry {
 		return superCmd;
 	}
 	
+	/**
+	 * Usage designed for tab complete.
+	 * @param enteredCommand the partial command entered
+	 * @return a List containing the possible sub commands that may follow, will never return null
+	 */
+	public List<String> getPossibleSubCommands(String[] enteredCommand) {
+		SubCommand sub = this.getSubCommand(enteredCommand);
+		if (sub == null) {
+			//Try to partially fix the last arg
+			sub = this.getSubCommand(Arrays.copyOfRange(enteredCommand, 0, enteredCommand.length-1));
+			if (sub == null) {
+				//Nope they are lost
+				return new ArrayList<String>();
+			}
+			List<String> tabCompletions = new ArrayList<String>();
+			for (String possibleArg : sub.getSubCommands()) {
+				if (possibleArg.startsWith(enteredCommand[enteredCommand.length-1])) {
+					tabCompletions.add(possibleArg);
+				}
+			}
+			return tabCompletions;
+		} else {
+			return sub.getSubCommands();
+		}
+	}
+	
 	@Nullable
 	private SubCommand getBaseCommand(String baseCommand) {
 		for (String baseAlias : baseCommand.split("\\|")) {
@@ -159,6 +208,8 @@ public class CommandRegistry {
 			base = new SubCommand(baseAliases[0], new String[0], permission, null);
 		}
 		this.baseCommands.put(baseAliases[0].toLowerCase(), base);
+		this.bukkitCommandMap.register(base.getName(), this.lib.getHook().getName().toLowerCase(), 
+				new BaseCommand(this.lib, base.getName(), "/"+base.getName(), "/"+base.getName(), base.getAliases()));
 		return base;
 	}
 	
@@ -197,7 +248,7 @@ public class CommandRegistry {
 	}
 	
 	public void displayHelp(CommandSender sender, @Nullable SubCommand cmdGiven) {
-		sender.sendMessage(ChatColor.YELLOW+"Acceptable sub commands are the following: ");
+		sender.sendMessage(ChatColor.YELLOW+"Acceptable commands are the following: ");
 		for (HandleInvoker invoker : this.invokers.values()) {
 			invoker.sendUsage(sender);
 		}

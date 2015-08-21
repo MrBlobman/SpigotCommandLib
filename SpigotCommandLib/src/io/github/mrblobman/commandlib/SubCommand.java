@@ -1,8 +1,10 @@
 package io.github.mrblobman.commandlib;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -16,11 +18,11 @@ public class SubCommand {
 	private String name;
 	private SubCommand superCommand;
 	private Set<String> permissions;
-	private Set<String> aliases;
+	private List<String> aliases;
 	
 	SubCommand(@Nonnull String name, String[] aliases, String permission, SubCommand superCommand, SubCommand... subCommands) {
 		this.name = name;
-		this.aliases = new HashSet<String>();
+		this.aliases = new ArrayList<String>();
 		for (String alias : aliases) {
 			this.aliases.add(alias.toLowerCase());
 		}
@@ -36,8 +38,8 @@ public class SubCommand {
 		return this.name;
 	}
 	
-	public Set<String> getAliases() {
-		return Collections.unmodifiableSet(this.aliases);
+	public List<String> getAliases() {
+		return Collections.unmodifiableList(this.aliases);
 	}
 	
 	/**
@@ -74,6 +76,14 @@ public class SubCommand {
 			}
 		}
 		return null;
+	}
+	
+	public List<String> getSubCommands() {
+		List<String> subCommands = new ArrayList<String>();
+		for (String sub : this.subCommands.keySet()) {
+			subCommands.add(sub);
+		}
+		return subCommands;
 	}
 	
 	public void addSubCommand(SubCommand cmd) {
