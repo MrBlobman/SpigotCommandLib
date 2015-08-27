@@ -11,18 +11,29 @@ public class ArgumentFormatter<T> {
 	public static final ArgumentFormatter<String> STRING = new ArgumentFormatter<String>(
 			String.class,
 			"^.*$",
-			(String arg) -> {
-				return arg;
-			},
+			(String arg) -> arg,
 			"String",
 			"A sequence of characters.",
 			"Ex: IAmAString");
+	public static final ArgumentFormatter<Boolean> BOOLEAN = new ArgumentFormatter<Boolean>(
+            Boolean.class,
+            "true|false|yes|no",
+            (String arg) -> {
+                switch (arg.toLowerCase()) {
+                    case "true":
+                    case "yes":
+                        return true;
+                    default:
+                        return false;
+                }
+            },
+            "Boolean",
+            "A true of false value.",
+            "Ex: true, false, yes, no");
 	public static final ArgumentFormatter<Integer> INTEGER = new ArgumentFormatter<Integer>(
 			Integer.class,
 			"^\\-?\\d+$",
-			(String arg) -> {
-				return Integer.parseInt(arg);
-			},
+			Integer::parseInt,
 			"Integer",
 			"A sequence of digits 0-9 with",
 			"an optional starting - sign.",
@@ -30,9 +41,7 @@ public class ArgumentFormatter<T> {
 	public static final ArgumentFormatter<Long> LONG = new ArgumentFormatter<Long>(
 			Long.class,
 			"^\\-?\\d+$",
-			(String arg) -> {
-				return Long.parseLong(arg);
-			},
+			Long::parseLong,
 			"Long",
 			"A sequence of digits 0-9 with",
 			"an optional starting - sign.",
@@ -40,9 +49,7 @@ public class ArgumentFormatter<T> {
 	public static final ArgumentFormatter<Short> SHORT = new ArgumentFormatter<Short>(
 			Short.class,
 			"^\\-?\\d+$",
-			(String arg) -> {
-				return Short.parseShort(arg);
-			},
+			Short::parseShort,
 			"Short",
 			"A sequence of digits 0-9 with",
 			"an optional starting - sign.",
@@ -50,9 +57,7 @@ public class ArgumentFormatter<T> {
 	public static final ArgumentFormatter<Double> DOUBLE = new ArgumentFormatter<Double>(
 			Double.class,
 			"^\\-?\\d+(\\.(\\d)+)?$",
-			(String arg) -> {
-				return Double.parseDouble(arg);
-			},
+			Double::parseDouble,
 			"Double",
 			"A sequence of digits 0-9 with an optional",
 			"starting - sign and decimal portion.",
@@ -60,9 +65,7 @@ public class ArgumentFormatter<T> {
 	public static final ArgumentFormatter<Float> FLOAT = new ArgumentFormatter<Float>(
 			Float.class,
 			"^\\-?\\d+(\\.(\\d)+)?$",
-			(String arg) -> {
-				return Float.parseFloat(arg);
-			},
+			Float::parseFloat,
 			"Float",
 			"A sequence of digits 0-9 with an optional",
 			"starting - sign and decimal portion.",
@@ -94,7 +97,7 @@ public class ArgumentFormatter<T> {
 	
 	private ArgumentFormatter(Class<T> parseType, String pattern, ArgumentParser<T> parser, String typeName, String... typeDesc) {
 		this.formatType = parseType;
-		this.pattern = Pattern.compile(pattern);
+		this.pattern = Pattern.compile(pattern, Pattern.CASE_INSENSITIVE);
 		this.parser = parser;
 		this.typeName = typeName;
 		this.typeDesc = typeDesc;
@@ -103,7 +106,7 @@ public class ArgumentFormatter<T> {
 	/**
 	 * Check if {@code arg} can be parsed as this argument type.
 	 * @param arg the argument to check parsability
-	 * @return true iff {@link ArgumentType#parse(String)} will successfully complete for {@code arg}
+	 * @return true iff {@link ArgumentFormatter#parse(String)} will successfully complete for {@code arg}
 	 */
 	public boolean canBeParsedFrom(String arg) {
 		return this.pattern.matcher(arg).matches();
@@ -112,7 +115,7 @@ public class ArgumentFormatter<T> {
 	/**
 	 * Parse {@code arg} as this argument type.<br>
 	 * This may throw all sorts of strange errors if arg is invalid.<br>
-	 * To prevent this see {@link ArgumentType#canBeParsedFrom(String)}
+	 * To prevent this see {@link ArgumentFormatter#canBeParsedFrom(String)}
 	 * @param arg the argument to parse
 	 * @return the parsed argument.
 	 */

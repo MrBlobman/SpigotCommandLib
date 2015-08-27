@@ -76,6 +76,8 @@ public class CommandRegistry {
 						formatters[i-1] = ArgumentFormatter.SHORT;
 					} else if (Float.class.isAssignableFrom(paramType) || Float.TYPE.isAssignableFrom(paramType)) {
 						formatters[i-1] = ArgumentFormatter.FLOAT;
+					} else if (Boolean.class.isAssignableFrom(paramType) || Boolean.TYPE.isAssignableFrom(paramType)) {
+						formatters[i-1] = ArgumentFormatter.BOOLEAN;
 					} else if (Color.class.isAssignableFrom(paramType)) {
 						formatters[i-1] = ArgumentFormatter.COLOR;
 					} else {
@@ -99,6 +101,8 @@ public class CommandRegistry {
 						formatters[methodParams.length-2] = ArgumentFormatter.SHORT;
 					} else if (Float[].class.isAssignableFrom(paramType) || float[].class.isAssignableFrom(paramType)) {
 						formatters[methodParams.length-2] = ArgumentFormatter.FLOAT;
+					} else if (Boolean[].class.isAssignableFrom(paramType) || boolean[].class.isAssignableFrom(paramType)) {
+						formatters[methodParams.length-2] = ArgumentFormatter.BOOLEAN;
 					} else if (Color[].class.isAssignableFrom(paramType)) {
 						formatters[methodParams.length-2] = ArgumentFormatter.COLOR;
 					} else {
