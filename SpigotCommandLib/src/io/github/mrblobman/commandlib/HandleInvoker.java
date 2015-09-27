@@ -34,6 +34,7 @@ public class HandleInvoker {
 		this.subCommand = subCmd;
 		this.invocationTarget = invocationTarget;
 		this.method = cmdHandler;
+		this.method.setAccessible(true);
 		this.senderType = senderType;
 		this.argNames = argNames;
 		this.argFormatters = argFormatters;

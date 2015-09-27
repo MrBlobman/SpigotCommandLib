@@ -50,7 +50,7 @@ public class SubCommand {
 	 */
 	public boolean canExecute(Permissible caller) {
 		for (String permission : this.permissions) {
-			if (caller.isOp() || (caller.hasPermission(permission) && this.superCommand.canExecute(caller))) return true;
+			if (caller.isOp() || (caller.hasPermission(permission) && (this.isBase() || this.superCommand.canExecute(caller)))) return true;
 		}
 		return false;
 	}
@@ -88,6 +88,10 @@ public class SubCommand {
 	
 	public void addSubCommand(SubCommand cmd) {
 		this.subCommands.put(cmd.getName().toLowerCase(), cmd);
+	}
+
+	public boolean isBase() {
+		return this.superCommand == null;
 	}
 	
 	/**

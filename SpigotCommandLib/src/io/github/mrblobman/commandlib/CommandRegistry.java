@@ -48,7 +48,7 @@ public class CommandRegistry {
 	
 	public void register(Object commandHandler) {
 		MethodLoop:
-			for (Method method : commandHandler.getClass().getMethods()) {
+			for (Method method : commandHandler.getClass().getDeclaredMethods()) {
 				CommandHandler handlerAnnotation = method.getAnnotation(CommandHandler.class);
 				//Move on, this method isnt annotated
 				if (handlerAnnotation == null) continue MethodLoop;
