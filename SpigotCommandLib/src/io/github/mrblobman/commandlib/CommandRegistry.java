@@ -204,6 +204,9 @@ public class CommandRegistry {
 		SubCommand base = getBaseCommand(baseAliases[0]);
 		if (base != null) {
 			base.addPermission(permission);
+			for (int i = 1; i < baseAliases.length; i++)
+				if (!base.getAliases().contains(baseAliases[i]))
+					base.getAliases().add(baseAliases[i]);
 			return base;
 		}
 		if (baseAliases.length > 1) {
@@ -211,7 +214,26 @@ public class CommandRegistry {
 		} else {
 			base = new SubCommand(baseAliases[0], new String[0], permission, null);
 		}
-		this.baseCommands.put(baseAliases[0].toLowerCase(), base);
+		for (String alias : baseAliases)
+			this.baseCommands.put(alias.toLowerCase(), base);
+		return base;
+
+		String[] baseAliases = baseCommand.split("\\|");
+		SubCommand base = getBaseCommand(baseAliases[0]);
+		if (base != null) {
+			base.addPermission(permission);
+			for (int i = 1; i < baseAliases.length; i++)
+				if (!base.getAliases().contains(baseAliases[i]))
+					base.getAliases().add(baseAliases[i]);
+			return base;
+		}
+		if (baseAliases.length > 1) {
+			base = new SubCommand(baseAliases[0], Arrays.copyOfRange(baseAliases, 1, baseAliases.length), permission, null);
+		} else {
+			base = new SubCommand(baseAliases[0], new String[0], permission, null);
+		}
+		for (String alias : baseAliases)
+			this.baseCommands.put(alias.toLowerCase(), base);
 		this.bukkitCommandMap.register(base.getName(), this.lib.getHook().getName().toLowerCase(), 
 				new BaseCommand(this.lib, base.getName(), "/"+base.getName(), "/"+base.getName(), base.getAliases()));
 		return base;
