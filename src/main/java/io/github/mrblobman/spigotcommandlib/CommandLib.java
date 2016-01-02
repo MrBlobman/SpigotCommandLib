@@ -35,8 +35,8 @@ public class CommandLib {
 		return this.hook;
 	}
 	
-	protected void execute(CommandSender sender, String[] command) throws Exception {
-		registry.handleCommand(sender, command);
+	protected boolean execute(CommandSender sender, String[] command) throws CommandException {
+		return registry.handleCommand(sender, command);
 	}
 	
 	protected List<String> tabComplete(CommandSender sender, String[] command) {

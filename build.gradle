@@ -12,7 +12,8 @@ buildscript {
 }
 
 apply plugin: 'java'
-apply plugin: 'me.tatarka.retrolambda'
+apply plugin: 'me.tatarka.retrolambda' //Down compile lambdas to Java 7 compatible code
+apply plugin: 'maven-publish'
 
 retrolambda {
     jdk = System.getenv("JAVA_HOME")
@@ -21,8 +22,11 @@ retrolambda {
 }
 
 repositories {
-    mavenLocal()
-    maven { url = "https://hub.spigotmc.org/nexus/content/repositories/snapshots/" }
+    //Spigot
+    maven { url = 'https://hub.spigotmc.org/nexus/content/repositories/snapshots/' }
+    //Bungee
+    maven { url = 'https://oss.sonatype.org/content/repositories/snapshots' }
+    //Rest of the libs
     mavenCentral()
 }
 
@@ -34,4 +38,12 @@ task testJar(type: Jar) {
     classifier = 'test'
     from sourceSets.main.output
     from sourceSets.test.output
+}
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            from components.java
+        }
+    }
 }

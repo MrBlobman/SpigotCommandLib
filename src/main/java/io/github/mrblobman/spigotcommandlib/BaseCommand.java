@@ -12,11 +12,12 @@ import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 
 /**
- * A bridge from bukkit command to our custom registry.
+ * A bridge from a {@link Command} to our custom registry.
  */
 public class BaseCommand extends Command {
-	private static Pattern argPattern = Pattern.compile("(?:(['\"])(.*?)(?<!\\\\)(?>\\\\\\\\)*\\1|([^\\s]+))");
-	private CommandLib lib;
+	private static final Pattern ARG_PATTERN = Pattern.compile("(?:(['\"])(.*?)(?<!\\\\)(?>\\\\\\\\)*\\1|([^\\s]+))");
+
+    private CommandLib lib;
 	
 	BaseCommand(CommandLib lib, String name, String description, String usageMessage, List<String> aliases) {
 		super(name, description, usageMessage, aliases);
@@ -26,16 +27,19 @@ public class BaseCommand extends Command {
 	@Override
 	public boolean execute(CommandSender sender, String label, String[] args) {
 		//Put the command back together.
-		StringBuilder cmd = new StringBuilder();
-		cmd.append(label);
+		StringBuilder cmd = new StringBuilder(label);
 		for (String arg : args) {
 			cmd.append(" ");
 			cmd.append(arg);
 		}
 		try {
-			lib.execute(sender, parseCommandString(cmd.toString()));
+			String[] cmdGiven = parseCommandString(cmd.toString());
+            if (!lib.execute(sender, cmdGiven)) {
+                lib.sendHelpMessage(sender, cmdGiven);
+                return false;
+            }
 		} catch (Exception e) {
-			sender.sendMessage(ChatColor.RED + "An internal error has occured. Please contact a server administrator.");
+			sender.sendMessage(ChatColor.RED + "An internal error has occurred. Please contact a server administrator.");
 			lib.getHook().getLogger().log(Level.SEVERE, "Error executing "+cmd.toString(), e);
 		}
 		return true;
@@ -45,8 +49,7 @@ public class BaseCommand extends Command {
 	public List<String> tabComplete(CommandSender sender, String alias, String[] args) {
 		List<String> results =  super.tabComplete(sender, alias, args);
 		//Put the command back together.
-		StringBuilder cmd = new StringBuilder();
-		cmd.append(alias);
+		StringBuilder cmd = new StringBuilder(alias);
 		for (String arg : args) {
 			cmd.append(" ");
 			cmd.append(arg);
@@ -58,13 +61,19 @@ public class BaseCommand extends Command {
 			return possibleSubs;
 		}
 	}
-	
+
+    /**
+     * Parse the command with our custom splitter to support
+     * wrapping args in quotation marks for args with spaces.
+     * @param command the entire submitted command.
+     * @return the properly split command
+     */
 	private String[] parseCommandString(String command) {
 		if (command.startsWith("/")) {
 			command = command.substring(1);
 		}
 		List<String> matches = new ArrayList<>();
-		Matcher m = argPattern.matcher(command);
+		Matcher m = ARG_PATTERN.matcher(command);
 		while (m.find()) {
 			if (m.group(2) != null) {
 				matches.add(m.group(2).replace("\\\"", "\""));

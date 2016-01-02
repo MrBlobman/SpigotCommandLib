@@ -14,7 +14,8 @@ public class ArgumentFormatter<T> {
 			(String arg) -> arg,
 			"String",
 			"A sequence of characters.",
-			"Ex: IAmAString");
+			"Ex: IAmAString or \"I Am A String\"");
+
 	public static final ArgumentFormatter<Boolean> BOOLEAN = new ArgumentFormatter<>(
 			Boolean.class,
 			"true|false|yes|no",
@@ -30,6 +31,7 @@ public class ArgumentFormatter<T> {
 			"Boolean",
 			"A true of false value.",
 			"Ex: true, false, yes, no");
+
 	public static final ArgumentFormatter<Integer> INTEGER = new ArgumentFormatter<>(
 			Integer.class,
 			"^\\-?\\d+$",
@@ -38,6 +40,7 @@ public class ArgumentFormatter<T> {
 			"A sequence of digits 0-9 with",
 			"an optional starting - sign.",
 			"Ex: -4536 (Min: " + Integer.MIN_VALUE + " Max: " + Integer.MAX_VALUE + ")");
+
 	public static final ArgumentFormatter<Long> LONG = new ArgumentFormatter<>(
 			Long.class,
 			"^\\-?\\d+$",
@@ -46,6 +49,7 @@ public class ArgumentFormatter<T> {
 			"A sequence of digits 0-9 with",
 			"an optional starting - sign.",
 			"Ex: -9287 (Min: " + Long.MIN_VALUE + " Max: " + Long.MAX_VALUE + ")");
+
 	public static final ArgumentFormatter<Short> SHORT = new ArgumentFormatter<>(
 			Short.class,
 			"^\\-?\\d+$",
@@ -54,6 +58,7 @@ public class ArgumentFormatter<T> {
 			"A sequence of digits 0-9 with",
 			"an optional starting - sign.",
 			"Ex: -4536 (Min: " + Short.MIN_VALUE + " Max: " + Short.MAX_VALUE + ")");
+
 	public static final ArgumentFormatter<Double> DOUBLE = new ArgumentFormatter<>(
 			Double.class,
 			"^\\-?\\d+(\\.(\\d)+)?$",
@@ -62,6 +67,7 @@ public class ArgumentFormatter<T> {
 			"A sequence of digits 0-9 with an optional",
 			"starting - sign and decimal portion.",
 			"Ex: -93.2 (Min: " + Double.MIN_VALUE + " Max: " + Double.MAX_VALUE + ")");
+
 	public static final ArgumentFormatter<Float> FLOAT = new ArgumentFormatter<>(
 			Float.class,
 			"^\\-?\\d+(\\.(\\d)+)?$",
@@ -70,6 +76,7 @@ public class ArgumentFormatter<T> {
 			"A sequence of digits 0-9 with an optional",
 			"starting - sign and decimal portion.",
 			"Ex: -2.883 (Min: " + Float.MIN_VALUE + " Max: " + Float.MAX_VALUE + ")");
+
 	public static final ArgumentFormatter<Color> COLOR = new ArgumentFormatter<>(
             Color.class,
             "^(0*)((1?[0-9]?[0-9])|([2][0-4][0-9])|(25[0-5]))," +
@@ -81,7 +88,7 @@ public class ArgumentFormatter<T> {
             },
             "Color",
             "3 number values ranging from 0-255",
-            "seperated by commas representing the",
+            "separated by commas representing the",
             "3 RGB values in the color.",
             "Ex: 0,255,13");
 

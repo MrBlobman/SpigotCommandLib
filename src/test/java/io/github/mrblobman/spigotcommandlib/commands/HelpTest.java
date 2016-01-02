@@ -17,7 +17,7 @@ public class HelpTest implements CommandHandler {
     }
 
     @CommandHandle(command = {"SpigotCommandLibTest", "help"}, permission = "test.help", description = "Get information about this plugins commands.")
-    public void bc(CommandSender sender, @ArgDescription(name = "searchQuery") String... searchQuery) {
+    public void help(CommandSender sender, @ArgDescription(name = "searchQuery") String... searchQuery) {
         this.lib.sendHelpMessage(sender, searchQuery);
     }
 }

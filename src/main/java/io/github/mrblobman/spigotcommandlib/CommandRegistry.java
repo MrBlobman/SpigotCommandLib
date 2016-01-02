@@ -265,11 +265,11 @@ public class CommandRegistry {
 	}
 	
 	/**
-	 * 
-	 * @param sender
-	 * @param command
+	 * Handle the given command.
+	 * @param sender the {@link CommandSender} that sent the command
+	 * @param command the command split into parts. The command followed by each argument
 	 * @return true iff the base command is registered with this registry and an attempt to execute was preformed
-	 * @throws Exception
+	 * @throws CommandException if an error occurs while handling the command.
 	 */
 	protected boolean handleCommand(CommandSender sender, String[] command) throws CommandException {
 		if (command == null || command.length < 1) throw new IllegalArgumentException("command was empty");
