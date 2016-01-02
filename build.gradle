@@ -1,24 +1,35 @@
-group 'io.github.mrblobman'
-version '1.0-SNAPSHOT'
-
 buildscript {
     repositories {
         mavenCentral()
+        maven {  url "https://plugins.gradle.org/m2/" }
     }
 
     dependencies {
         classpath 'me.tatarka:gradle-retrolambda:3.2.4'
+        classpath "gradle.plugin.nl.javadude.gradle.plugins:license-gradle-plugin:0.12.1"
     }
 }
 
+group 'io.github.mrblobman'
+version '1.0'
+
 apply plugin: 'java'
 apply plugin: 'me.tatarka.retrolambda' //Down compile lambdas to Java 7 compatible code
+apply plugin: "com.github.hierynomus.license" //Ensure all files have the license header
 apply plugin: 'maven-publish'
+
+defaultTasks 'licenseFormat', 'build'
 
 retrolambda {
     jdk = System.getenv("JAVA_HOME")
     oldJdk = System.getenv("JAVA7_HOME")
     javaVersion = JavaVersion.VERSION_1_7
+}
+
+license {
+    include '**/*.java'
+    header = rootProject.file('LICENSE')
+    strictCheck true
 }
 
 repositories {
