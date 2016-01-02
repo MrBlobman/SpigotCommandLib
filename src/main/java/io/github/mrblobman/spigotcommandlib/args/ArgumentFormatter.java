@@ -1,92 +1,92 @@
-package io.github.mrblobman.commandlib;
+package io.github.mrblobman.spigotcommandlib.args;
+
+import org.bukkit.Color;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
 
-import org.bukkit.Color;
-
 public class ArgumentFormatter<T> {
 	
-	public static final ArgumentFormatter<String> STRING = new ArgumentFormatter<String>(
+	public static final ArgumentFormatter<String> STRING = new ArgumentFormatter<>(
 			String.class,
 			"^.*$",
 			(String arg) -> arg,
 			"String",
 			"A sequence of characters.",
 			"Ex: IAmAString");
-	public static final ArgumentFormatter<Boolean> BOOLEAN = new ArgumentFormatter<Boolean>(
-            Boolean.class,
-            "true|false|yes|no",
-            (String arg) -> {
-                switch (arg.toLowerCase()) {
-                    case "true":
-                    case "yes":
-                        return true;
-                    default:
-                        return false;
-                }
-            },
-            "Boolean",
-            "A true of false value.",
-            "Ex: true, false, yes, no");
-	public static final ArgumentFormatter<Integer> INTEGER = new ArgumentFormatter<Integer>(
+	public static final ArgumentFormatter<Boolean> BOOLEAN = new ArgumentFormatter<>(
+			Boolean.class,
+			"true|false|yes|no",
+			(String arg) -> {
+				switch (arg.toLowerCase()) {
+					case "true":
+					case "yes":
+						return true;
+					default:
+						return false;
+				}
+			},
+			"Boolean",
+			"A true of false value.",
+			"Ex: true, false, yes, no");
+	public static final ArgumentFormatter<Integer> INTEGER = new ArgumentFormatter<>(
 			Integer.class,
 			"^\\-?\\d+$",
 			Integer::parseInt,
 			"Integer",
 			"A sequence of digits 0-9 with",
 			"an optional starting - sign.",
-			"Ex: -4536 (Min: "+Integer.MIN_VALUE+" Max: "+Integer.MAX_VALUE+")");
-	public static final ArgumentFormatter<Long> LONG = new ArgumentFormatter<Long>(
+			"Ex: -4536 (Min: " + Integer.MIN_VALUE + " Max: " + Integer.MAX_VALUE + ")");
+	public static final ArgumentFormatter<Long> LONG = new ArgumentFormatter<>(
 			Long.class,
 			"^\\-?\\d+$",
 			Long::parseLong,
 			"Long",
 			"A sequence of digits 0-9 with",
 			"an optional starting - sign.",
-			"Ex: -9287 (Min: "+Long.MIN_VALUE+" Max: "+Long.MAX_VALUE+")");
-	public static final ArgumentFormatter<Short> SHORT = new ArgumentFormatter<Short>(
+			"Ex: -9287 (Min: " + Long.MIN_VALUE + " Max: " + Long.MAX_VALUE + ")");
+	public static final ArgumentFormatter<Short> SHORT = new ArgumentFormatter<>(
 			Short.class,
 			"^\\-?\\d+$",
 			Short::parseShort,
 			"Short",
 			"A sequence of digits 0-9 with",
 			"an optional starting - sign.",
-			"Ex: -4536 (Min: "+Short.MIN_VALUE+" Max: "+Short.MAX_VALUE+")");
-	public static final ArgumentFormatter<Double> DOUBLE = new ArgumentFormatter<Double>(
+			"Ex: -4536 (Min: " + Short.MIN_VALUE + " Max: " + Short.MAX_VALUE + ")");
+	public static final ArgumentFormatter<Double> DOUBLE = new ArgumentFormatter<>(
 			Double.class,
 			"^\\-?\\d+(\\.(\\d)+)?$",
 			Double::parseDouble,
 			"Double",
 			"A sequence of digits 0-9 with an optional",
 			"starting - sign and decimal portion.",
-			"Ex: -93.2 (Min: "+Double.MIN_VALUE+" Max: "+Double.MAX_VALUE+")");
-	public static final ArgumentFormatter<Float> FLOAT = new ArgumentFormatter<Float>(
+			"Ex: -93.2 (Min: " + Double.MIN_VALUE + " Max: " + Double.MAX_VALUE + ")");
+	public static final ArgumentFormatter<Float> FLOAT = new ArgumentFormatter<>(
 			Float.class,
 			"^\\-?\\d+(\\.(\\d)+)?$",
 			Float::parseFloat,
 			"Float",
 			"A sequence of digits 0-9 with an optional",
 			"starting - sign and decimal portion.",
-			"Ex: -2.883 (Min: "+Float.MIN_VALUE+" Max: "+Float.MAX_VALUE+")");
-	public static final ArgumentFormatter<Color> COLOR = new ArgumentFormatter<Color>(
-			Color.class,
-			"^(0*)((1?[0-9]?[0-9])|([2][0-4][0-9])|(25[0-5]))," +
-			"(0*)((1?[0-9]?[0-9])|([2][0-4][0-9])|(25[0-5]))," + 
-			"(0*)((1?[0-9]?[0-9])|([2][0-4][0-9])|(25[0-5]))$",
-			(String arg) -> {
-				String[] parts = arg.split(",");
-				return Color.fromRGB(Integer.parseInt(parts[0]), Integer.parseInt(parts[1]), Integer.parseInt(parts[2]));
-			},
-			"Color",
-			"3 number values ranging from 0-255",
-			"seperated by commas representing the",
-			"3 RGB values in the color.",
-			"Ex: 0,255,13");
-	
+			"Ex: -2.883 (Min: " + Float.MIN_VALUE + " Max: " + Float.MAX_VALUE + ")");
+	public static final ArgumentFormatter<Color> COLOR = new ArgumentFormatter<>(
+            Color.class,
+            "^(0*)((1?[0-9]?[0-9])|([2][0-4][0-9])|(25[0-5]))," +
+                    "(0*)((1?[0-9]?[0-9])|([2][0-4][0-9])|(25[0-5]))," +
+                    "(0*)((1?[0-9]?[0-9])|([2][0-4][0-9])|(25[0-5]))$",
+            (String arg) -> {
+                String[] parts = arg.split(",");
+                return Color.fromRGB(Integer.parseInt(parts[0]), Integer.parseInt(parts[1]), Integer.parseInt(parts[2]));
+            },
+            "Color",
+            "3 number values ranging from 0-255",
+            "seperated by commas representing the",
+            "3 RGB values in the color.",
+            "Ex: 0,255,13");
+
 	private interface ArgumentParser<T> {
-		public T parse(String arg);
+		T parse(String arg);
 	}
 	
 	private Pattern pattern;
@@ -138,16 +138,16 @@ public class ArgumentFormatter<T> {
 	}
 	
 	/**
-	 * Create and return a {@link java.util.List} with the type of this formatter.
+	 * Create and return a {@link List} with the type of this formatter.
 	 * @return the created list.
 	 */
 	public List<T> createTypedList() {
-		return new ArrayList<T>();
+		return new ArrayList<>();
 	}
 	
 	/**
 	 * Get the type that this formatter parses.
-	 * @return
+	 * @return the type of the parsed object.
 	 */
 	public Class<T> getParseType() {
 		return this.formatType;

@@ -1,4 +1,4 @@
-package io.github.mrblobman.commandlib;
+package io.github.mrblobman.spigotcommandlib;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -63,13 +63,13 @@ public class BaseCommand extends Command {
 		if (command.startsWith("/")) {
 			command = command.substring(1);
 		}
-		List<String> matches = new ArrayList<String>();
+		List<String> matches = new ArrayList<>();
 		Matcher m = argPattern.matcher(command);
 		while (m.find()) {
 			if (m.group(2) != null) {
-				matches.add(m.group(2));
+				matches.add(m.group(2).replace("\\\"", "\""));
 			} else if (m.group(3) != null) {
-				matches.add(m.group(3));
+				matches.add(m.group(3).replace("\\\"", "\""));
 			}
 		}
 		return matches.toArray(new String[matches.size()]);

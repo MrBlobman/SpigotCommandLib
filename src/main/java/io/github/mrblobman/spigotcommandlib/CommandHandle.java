@@ -1,4 +1,4 @@
-package io.github.mrblobman.commandlib;
+package io.github.mrblobman.spigotcommandlib;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -6,11 +6,11 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * For best usage help compile with parameter names.
+ * For best usage 'help message' compile your classes with parameter names.
  */
 @Target (ElementType.METHOD)
 @Retention (RetentionPolicy.RUNTIME)
-public @interface CommandHandler {
+public @interface CommandHandle {
 	
 	/**
 	 * Specifies the sub command that this method handles.
@@ -26,4 +26,10 @@ public @interface CommandHandler {
 	 * @return the String representation of the required permission
 	 */
 	String permission();
+
+    /**
+     * A short description about what this command does.
+     * @return the description
+     */
+	String description();
 }

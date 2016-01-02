@@ -1,32 +1,23 @@
-package io.github.mrblobman.commandlib;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+package io.github.mrblobman.spigotcommandlib;
 
 import org.bukkit.permissions.Permissible;
 
+import java.util.*;
+
 public class SubCommand {
-	private Map<String, SubCommand> subCommands = new HashMap<String, SubCommand>();
+	private Map<String, SubCommand> subCommands = new HashMap<>();
 	private String name;
 	private SubCommand superCommand;
 	private Set<String> permissions;
 	private List<String> aliases;
 	
-	SubCommand(@Nonnull String name, String[] aliases, String permission, SubCommand superCommand, SubCommand... subCommands) {
+	SubCommand(String name, String[] aliases, String permission, SubCommand superCommand, SubCommand... subCommands) {
 		this.name = name;
-		this.aliases = new ArrayList<String>();
+		this.aliases = new ArrayList<>();
 		for (String alias : aliases) {
 			this.aliases.add(alias.toLowerCase());
 		}
-		this.permissions = new HashSet<String>();
+		this.permissions = new HashSet<>();
 		this.permissions.add(permission);
 		for (SubCommand cmd : subCommands) {
 			this.subCommands.put(cmd.getName().toLowerCase(), cmd);
@@ -50,7 +41,7 @@ public class SubCommand {
 	 */
 	public boolean canExecute(Permissible caller) {
 		for (String permission : this.permissions) {
-			if (caller.isOp() || (caller.hasPermission(permission) && (this.isBase() || this.superCommand.canExecute(caller)))) return true;
+			if (caller.hasPermission(permission) && (this.isBase() || this.superCommand.canExecute(caller))) return true;
 		}
 		return false;
 	}
@@ -62,8 +53,7 @@ public class SubCommand {
 	public boolean removePermission(String permission) {
 		return this.permissions.remove(permission);
 	}
-	
-	@Nullable
+
 	public SubCommand getSubCommand(String name) {
 		String lowerCaseName = name.toLowerCase();
 		SubCommand cmd = this.subCommands.get(lowerCaseName);
@@ -79,36 +69,49 @@ public class SubCommand {
 	}
 	
 	public List<String> getSubCommands() {
-		List<String> subCommands = new ArrayList<String>();
-		for (String sub : this.subCommands.keySet()) {
-			subCommands.add(sub);
-		}
-		return subCommands;
+        List<String> subCommands = new ArrayList<>();
+        subCommands.addAll(this.subCommands.keySet());
+        return subCommands;
 	}
 	
 	public void addSubCommand(SubCommand cmd) {
 		this.subCommands.put(cmd.getName().toLowerCase(), cmd);
+	}
+	
+	/**
+	 * The super command that directly leads this command.
+	 * @return null if this SubCommand is a BaseCommand
+	 */
+	public SubCommand getSuperCommand() {
+		return this.superCommand;
 	}
 
 	public boolean isBase() {
 		return this.superCommand == null;
 	}
 	
-	/**
-	 * The super command that directly leads this command.
-	 * @return null if this SubCommand is a {@link BaseCommand}
-	 */
-	@Nullable
-	public SubCommand getSuperCommand() {
-		return this.superCommand;
-	}
-	
 	@Override
 	public String toString() {
-		if (this.superCommand == null) {
-			return "/"+this.name;
+        String name = this.name;
+        if (!this.aliases.isEmpty()) {
+            StringBuilder sb = new StringBuilder();
+            for (String alias : aliases) sb.append("|").append(alias);
+            name = name + sb.toString();
+            //JDK8+ name = name + "|" + this.aliases.stream().collect(Collectors.joining("|"));
+        }
+        if (this.superCommand == null) {
+			return "/"+name;
 		} else {
-			return this.superCommand.toString()+" "+this.name;
+			return this.superCommand.toString()+" "+name;
+		}
+	}
+
+	public String toExecutableString() {
+		String name = this.name;
+		if (this.superCommand == null) {
+			return "/"+name;
+		} else {
+			return this.superCommand.toString()+" "+name;
 		}
 	}
 }
