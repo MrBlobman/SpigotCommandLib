@@ -1,0 +1,37 @@
+group 'io.github.mrblobman'
+version '1.0-SNAPSHOT'
+
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+
+    dependencies {
+        classpath 'me.tatarka:gradle-retrolambda:3.2.4'
+    }
+}
+
+apply plugin: 'java'
+apply plugin: 'me.tatarka.retrolambda'
+
+retrolambda {
+    jdk = System.getenv("JAVA_HOME")
+    oldJdk = System.getenv("JAVA7_HOME")
+    javaVersion = JavaVersion.VERSION_1_7
+}
+
+repositories {
+    mavenLocal()
+    maven { url = "https://hub.spigotmc.org/nexus/content/repositories/snapshots/" }
+    mavenCentral()
+}
+
+dependencies {
+    compile group: 'org.spigotmc', name: 'spigot-api', version: '1.8.8-R0.1-SNAPSHOT'
+}
+
+task testJar(type: Jar) {
+    classifier = 'test'
+    from sourceSets.main.output
+    from sourceSets.test.output
+}

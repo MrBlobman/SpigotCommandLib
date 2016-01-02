@@ -1,17 +1,21 @@
-package io.github.mrblobman.commandlib;
+package io.github.mrblobman.spigotcommandlib;
 
-import java.util.List;
 import org.bukkit.command.CommandSender;
 import org.bukkit.plugin.Plugin;
+
+import java.util.List;
 
 public class CommandLib {
 	private CommandRegistry registry;
 	private Plugin hook;
 	
-	public CommandLib (Plugin hook) throws InstantiationException {
+	public CommandLib (Plugin hook) throws IllegalStateException {
 		this.hook = hook;
-		this.registry = new CommandRegistry(this);
-		//Bukkit.getPluginManager().registerEvents(this, hook);
+		try {
+			this.registry = new CommandRegistry(this);
+		} catch (InstantiationException e) {
+			throw new IllegalStateException("Could not retrieve the bukkit command map. It is likely that this instance is being constructed before a server is available.");
+		}
 	}
 	
 	/**
@@ -20,7 +24,7 @@ public class CommandLib {
 	 * @see CommandHandler
 	 * @param handler the command handler
 	 */
-	public void registerCommandHandler(Object handler) {
+	public void registerCommandHandler(CommandHandler handler) {
 		registry.register(handler);
 	}
 	
@@ -37,5 +41,9 @@ public class CommandLib {
 	
 	protected List<String> tabComplete(CommandSender sender, String[] command) {
 		return registry.getPossibleSubCommands(command);
+	}
+
+	public void sendHelpMessage(CommandSender sender, String... searchQuery) {
+		this.registry.displayHelp(sender, searchQuery);
 	}
 }
