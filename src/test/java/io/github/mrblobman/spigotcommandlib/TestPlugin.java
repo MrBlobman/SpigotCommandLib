@@ -23,10 +23,8 @@
  */
 package io.github.mrblobman.spigotcommandlib;
 
-import io.github.mrblobman.spigotcommandlib.commands.ArgDescTest;
-import io.github.mrblobman.spigotcommandlib.commands.HelpTest;
-import io.github.mrblobman.spigotcommandlib.commands.TypeTest;
-import io.github.mrblobman.spigotcommandlib.commands.VarargsTest;
+import io.github.mrblobman.spigotcommandlib.commands.*;
+import io.github.mrblobman.spigotcommandlib.registry.CommandLib;
 import org.bukkit.plugin.java.JavaPlugin;
 
 /**
@@ -42,6 +40,7 @@ public class TestPlugin extends JavaPlugin {
         this.lib.registerCommandHandler(new TypeTest());
         this.lib.registerCommandHandler(new ArgDescTest());
         this.lib.registerCommandHandler(new HelpTest(lib));
+        this.lib.registerCommandHandler(new OptionalTest(this));
     }
 
     @Override

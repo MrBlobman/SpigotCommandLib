@@ -18,8 +18,6 @@ apply plugin: 'me.tatarka.retrolambda' //Down compile lambdas to Java 7 compatib
 apply plugin: "com.github.hierynomus.license" //Ensure all files have the license header
 apply plugin: 'maven-publish'
 
-defaultTasks 'licenseFormat', 'build'
-
 retrolambda {
     jdk = System.getenv("JAVA_HOME")
     oldJdk = System.getenv("JAVA7_HOME")
@@ -31,6 +29,7 @@ license {
     header = rootProject.file('LICENSE')
     strictCheck true
 }
+build.dependsOn licenseFormat
 
 repositories {
     //Spigot

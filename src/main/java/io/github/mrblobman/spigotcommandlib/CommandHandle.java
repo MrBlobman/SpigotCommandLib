@@ -48,7 +48,7 @@ public @interface CommandHandle {
 	 * Ex: my.subcommands.permission
 	 * @return the String representation of the required permission
 	 */
-	String permission();
+	String permission() default "";
 
     /**
      * A short description about what this command does.

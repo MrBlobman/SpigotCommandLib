@@ -49,4 +49,9 @@ public @interface ArgDescription {
      * @return the name of this argument
      */
     String name() default "";
+
+    /**
+     * @return true if this arg is optional, false if it is required
+     */
+    boolean optional() default false;
 }

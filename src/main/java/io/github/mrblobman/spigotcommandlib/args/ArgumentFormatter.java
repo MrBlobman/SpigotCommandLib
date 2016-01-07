@@ -26,11 +26,12 @@ package io.github.mrblobman.spigotcommandlib.args;
 import org.bukkit.Color;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Pattern;
 
 public class ArgumentFormatter<T> {
-	
 	public static final ArgumentFormatter<String> STRING = new ArgumentFormatter<>(
 			String.class,
 			"^.*$",
@@ -41,7 +42,7 @@ public class ArgumentFormatter<T> {
 
 	public static final ArgumentFormatter<Boolean> BOOLEAN = new ArgumentFormatter<>(
 			Boolean.class,
-			"true|false|yes|no",
+			"^true|false|yes|no$",
 			(String arg) -> {
 				switch (arg.toLowerCase()) {
 					case "true":
@@ -150,7 +151,12 @@ public class ArgumentFormatter<T> {
 	 * @return the parsed argument.
 	 */
 	public T parse(String arg) {
-		return this.parser.parse(arg);
+        try {
+            return this.parser.parse(arg);
+        } catch (Exception e) {
+            if (!(e instanceof ParseException)) throw new ParseException(e);
+            throw e;
+        }
 	}
 	
 	/**
@@ -182,4 +188,11 @@ public class ArgumentFormatter<T> {
 	public Class<T> getParseType() {
 		return this.formatType;
 	}
+
+    @Override
+    public String toString() {
+        return "ArgumentFormatter{" +
+                "typeName='" + typeName + '\'' +
+                '}';
+    }
 }

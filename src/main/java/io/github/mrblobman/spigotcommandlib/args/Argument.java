@@ -25,35 +25,50 @@ package io.github.mrblobman.spigotcommandlib.args;
 
 import net.md_5.bungee.api.ChatColor;
 
+import java.util.Arrays;
+
 /**
  * Created on 11/12/2015.
  */
 public class Argument<T> {
+    public static final int REQUIRED = 0;
+    public static final int OPTIONAL = 1;
+    public static final int VAR_ARGS = 2;
+
     private ArgumentFormatter<T> formatter;
+    private Class type;
     private String name;
     private String[] desc;
+    private boolean isOptional;
     private boolean isVarArgs;
 
-
-    public Argument(ArgumentFormatter<T> formatter, String name, String[] desc, boolean isVarArgs) {
+    public Argument(ArgumentFormatter<T> formatter, Class argClass, String name, String[] desc, int type) {
         this.formatter = formatter;
+        this.type = argClass;
         this.name = name;
         this.desc = desc;
-        this.isVarArgs = isVarArgs;
+        if (type == OPTIONAL) {
+            isOptional = true;
+            isVarArgs = false;
+        } else if (type == VAR_ARGS) {
+            isOptional = true;
+            isVarArgs = true;
+        } else {
+            isOptional = false;
+            isVarArgs = false;
+        }
     }
 
     /**
-     * Equivalent to calling {@link Argument#Argument(ArgumentFormatter, String, String[], boolean)}
+     * Equivalent to calling {@link Argument#Argument(ArgumentFormatter, Class, String, String[], int)}
      * with the description derived from the formatter.
      */
-    public Argument(ArgumentFormatter<T> formatter, String name, boolean isVarArgs) {
-        this.formatter = formatter;
-        this.name = name;
+    public Argument(ArgumentFormatter<T> formatter, Class argClass, String name, int type) {
+        this(formatter, argClass, name, null, type);
         this.desc = new String[formatter.getTypeDesc().length+1];
         this.desc[0] = ChatColor.YELLOW + formatter.getTypeName();
         for (int i = 1; i < this.desc.length; i++)
             this.desc[i] = ChatColor.GRAY + formatter.getTypeDesc()[i-1];
-        this.isVarArgs = isVarArgs;
     }
 
     /**
@@ -70,8 +85,9 @@ public class Argument<T> {
      * @return the descriptive name for this argument
      */
     public String getDescriptiveName() {
-        if (isVarArgs()) return "[" + getName() + "]";
-        else             return "<" + getName() + ">";
+        if (isVarArgs())        return "[" + getName() + "]...";
+        else if (isOptional())  return "[" + getName() + "]";
+        else                    return "<" + getName() + ">";
     }
 
     /**
@@ -94,10 +110,38 @@ public class Argument<T> {
     }
 
     /**
+     * Get the type that this argument is declared as.
+     * @return the type this argument is declared as
+     */
+    public Class getArgumentType() {
+        return this.type;
+    }
+
+    /**
      * Check if this argument is an argument of varying length.
      * @return true iff this argument is of varying length, false otherwise.
      */
     public boolean isVarArgs() {
         return this.isVarArgs;
+    }
+
+    /**
+     * Check if this argument is optional or not.
+     * if {@link #isVarArgs()} returns true, isOptional() will also return true
+     * @return true iff this argument is optional, false otherwise.
+     */
+    public boolean isOptional() {
+        return this.isOptional;
+    }
+
+    @Override
+    public String toString() {
+        return "Argument{" +
+                "formatter=" + formatter +
+                ", name='" + name + '\'' +
+                ", desc=" + Arrays.toString(desc) +
+                ", isOptional=" + isOptional +
+                ", isVarArgs=" + isVarArgs +
+                '}';
     }
 }
