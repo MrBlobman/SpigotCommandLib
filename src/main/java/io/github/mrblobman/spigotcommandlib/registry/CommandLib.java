@@ -23,8 +23,7 @@
  */
 package io.github.mrblobman.spigotcommandlib.registry;
 
-import io.github.mrblobman.spigotcommandlib.CommandException;
-import io.github.mrblobman.spigotcommandlib.CommandHandler;
+import io.github.mrblobman.spigotcommandlib.*;
 import org.bukkit.command.CommandSender;
 import org.bukkit.plugin.Plugin;
 
@@ -45,12 +44,22 @@ public class CommandLib {
 	
 	/**
 	 * Register a new handler. Methods that handle specific commands must
-	 * be flagged with the {@code @SubCommandHandler} annotation.
-	 * @see CommandHandler
+	 * be flagged with the {@code @CommandHandle} annotation.
+	 * @see CommandHandle
 	 * @param handler the command handler
 	 */
 	public void registerCommandHandler(CommandHandler handler) {
 		registry.register(handler);
+	}
+
+	/**
+	 * Register a new handler. Methods that handle specific commands must
+	 * be flagged with the {@code @SubCommandHandle} annotation.
+	 * @see SubCommandHandle
+	 * @param handler the command handler
+	 */
+	public void registerSubCommandHandler(SubCommandHandler handler, String... cmdPrefix) {
+		registry.register(handler, cmdPrefix);
 	}
 	
 	/**

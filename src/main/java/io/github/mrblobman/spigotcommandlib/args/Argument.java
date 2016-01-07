@@ -47,6 +47,8 @@ public class Argument<T> {
         this.type = argClass;
         this.name = name;
         this.desc = desc;
+        if (desc != null)
+            for (int i = 0; i < desc.length; i++) desc[i] = ChatColor.translateAlternateColorCodes('&', desc[i]);
         if (type == OPTIONAL) {
             isOptional = true;
             isVarArgs = false;

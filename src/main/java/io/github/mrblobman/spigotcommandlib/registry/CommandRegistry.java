@@ -23,9 +23,7 @@
  */
 package io.github.mrblobman.spigotcommandlib.registry;
 
-import io.github.mrblobman.spigotcommandlib.CommandException;
-import io.github.mrblobman.spigotcommandlib.CommandHandle;
-import io.github.mrblobman.spigotcommandlib.CommandHandler;
+import io.github.mrblobman.spigotcommandlib.*;
 import io.github.mrblobman.spigotcommandlib.args.ArgDescription;
 import io.github.mrblobman.spigotcommandlib.args.Argument;
 import io.github.mrblobman.spigotcommandlib.args.ArgumentFormatter;
@@ -78,12 +76,45 @@ public class CommandRegistry {
                 lib.getHook().getLogger().log(Level.WARNING, "Cannot register method " + method.getName() + ". Not enough parameters. Requires first param as sender.");
                 continue;
             }
-            if (!registerSingleMethod(method, commandHandler, handlerAnnotation)) continue;
+            if (!registerSingleMethod(method, commandHandler,
+                    handlerAnnotation.command(),
+                    handlerAnnotation.permission(),
+                    ChatColor.translateAlternateColorCodes('&', handlerAnnotation.description())))
+                continue;
             lib.getHook().getLogger().log(Level.INFO, "Successfully registered " + method.getName() + " in " + commandHandler.getClass().getSimpleName() + " for /" + Arrays.toString(handlerAnnotation.command()).replaceAll("[,\\[\\]]", ""));
         }
     }
 
-    private boolean registerSingleMethod(Method method, CommandHandler commandHandler, CommandHandle handlerAnnotation) {
+    public void register(SubCommandHandler commandHandler, String... subCommandPrefix) {
+        for (Method method : commandHandler.getClass().getDeclaredMethods()) {
+            SubCommandHandle handlerAnnotation = method.getAnnotation(SubCommandHandle.class);
+            //Move on, this method isn't annotated
+            if (handlerAnnotation == null) continue;
+            //Check that min requirements are met
+            //JDK8+ if (method.getParameterCount() < 1) {
+            if (method.getParameterTypes().length < 1) {
+                lib.getHook().getLogger().log(Level.WARNING, "Cannot register method " + method.getName() + ". Not enough parameters. Requires first param as sender.");
+                continue;
+            }
+            String[] command;
+            if (handlerAnnotation.command().length > 0) {
+                command = Arrays.copyOf(subCommandPrefix, subCommandPrefix.length + handlerAnnotation.command().length);
+                for (int i = 0; i < handlerAnnotation.command().length; i++)
+                    command[subCommandPrefix.length+i] = handlerAnnotation.command()[i];
+            } else {
+                command = Arrays.copyOf(subCommandPrefix, subCommandPrefix.length + 1);
+                command[subCommandPrefix.length] = method.getName();
+            }
+            if (!registerSingleMethod(method, commandHandler,
+                    command,
+                    handlerAnnotation.permission(),
+                    ChatColor.translateAlternateColorCodes('&', handlerAnnotation.description())))
+                continue;
+            lib.getHook().getLogger().log(Level.INFO, "Successfully registered " + method.getName() + " in " + commandHandler.getClass().getSimpleName() + " for /" + Arrays.toString(handlerAnnotation.command()).replaceAll("[,\\[\\]]", ""));
+        }
+    }
+
+    private boolean registerSingleMethod(Method method, Object commandHandler, String[] command, String permission, String description) {
         //JDK8+ Parameter[] methodParams = method.getParameters();
         Class<?>[] methodParams = method.getParameterTypes();
         //JDK7 annotation workaround
@@ -153,13 +184,13 @@ public class CommandRegistry {
             return false;
         }
         //Register the sub command
-        SubCommand cmd = addSubCommand(handlerAnnotation.command(), handlerAnnotation.permission());
+        SubCommand cmd = addSubCommand(command, permission);
         if (cmd == null) {
             lib.getHook().getLogger().log(Level.WARNING, "Cannot register method " + method.getName() + ". Invalid sub command.");
             return false;
         }
         //Finally create the invoker
-        this.invokers.put(cmd, new HandleInvoker(cmd, handlerAnnotation.description(), commandHandler, method, senderType, arguments));
+        this.invokers.put(cmd, new HandleInvoker(cmd, description, commandHandler, method, senderType, arguments));
         return true;
     }
 
