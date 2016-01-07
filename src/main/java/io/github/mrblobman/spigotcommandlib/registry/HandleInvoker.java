@@ -21,7 +21,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package io.github.mrblobman.spigotcommandlib;
+package io.github.mrblobman.spigotcommandlib.registry;
 
 import io.github.mrblobman.spigotcommandlib.args.Argument;
 import net.md_5.bungee.api.ChatColor;
