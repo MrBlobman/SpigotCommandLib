@@ -21,24 +21,30 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package io.github.mrblobman.spigotcommandlib.commands;
+package io.github.mrblobman.spigotcommandlib.registry;
 
-import io.github.mrblobman.spigotcommandlib.SubCommandHandle;
-import io.github.mrblobman.spigotcommandlib.SubCommandHandler;
 import org.bukkit.command.CommandSender;
 
 /**
- * Created on 2016-01-07.
+ * Created on 2016-01-08.
  */
-public class SubCommandTest implements SubCommandHandler {
+public interface Invoker {
 
-    @SubCommandHandle(permission = "subcommand.test", description = "Testing subcommand handler 1.")
-    private void subOne(CommandSender sender, String arg1) {
-        sender.sendMessage("Sub1: "+arg1);
-    }
+    /**
+     * Invoke this invoker for the given sender.
+     * @param command the command sent.
+     * @param sender the command sender.
+     * @param args the arguments passed to the command
+     * @return returns true if an invocation was attempted, false otherwise.
+     * @throws Exception if an error occurs during invocation
+     */
+    boolean invoke(SubCommand command, CommandSender sender, String[] args) throws Exception;
 
-    @SubCommandHandle(permission = "subcommand.test", description = "Testing subcommand handler 2.")
-    private void subTwo(CommandSender sender, String arg1) {
-        sender.sendMessage("Sub2: "+arg1);
-    }
+    /**
+     * Send a description of the command that will be invoked
+     * with this invoker.
+     * @param command send the sender a description of this command.
+     * @param sender the sender that could be sending the command.
+     */
+    void sendDescription(SubCommand command, CommandSender sender);
 }

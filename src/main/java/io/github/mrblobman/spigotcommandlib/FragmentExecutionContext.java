@@ -21,24 +21,39 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package io.github.mrblobman.spigotcommandlib.commands;
-
-import io.github.mrblobman.spigotcommandlib.SubCommandHandle;
-import io.github.mrblobman.spigotcommandlib.SubCommandHandler;
-import org.bukkit.command.CommandSender;
+package io.github.mrblobman.spigotcommandlib;
 
 /**
- * Created on 2016-01-07.
+ * Created on 2016-01-08.
  */
-public class SubCommandTest implements SubCommandHandler {
+public class FragmentExecutionContext {
+    private int state;
 
-    @SubCommandHandle(permission = "subcommand.test", description = "Testing subcommand handler 1.")
-    private void subOne(CommandSender sender, String arg1) {
-        sender.sendMessage("Sub1: "+arg1);
+    public FragmentExecutionContext(int state) {
+        this.state = state;
     }
 
-    @SubCommandHandle(permission = "subcommand.test", description = "Testing subcommand handler 2.")
-    private void subTwo(CommandSender sender, String arg1) {
-        sender.sendMessage("Sub2: "+arg1);
+    public FragmentExecutionContext() {
+        this(0);
+    }
+
+    /**
+     * Get the current state that the executor bound to
+     * this context is in.<br>
+     * The executor must be in the correct state in order for
+     * execution of a fragment command to occur.
+     * @return the state of the executor bound to this context.
+     */
+    public int getState() {
+        return this.state;
+    }
+
+    /**
+     * Set the current state that the executor bound to this context
+     * is in.
+     * @param state the new state for this executor's context.
+     */
+    public void setState(int state) {
+        this.state = state;
     }
 }

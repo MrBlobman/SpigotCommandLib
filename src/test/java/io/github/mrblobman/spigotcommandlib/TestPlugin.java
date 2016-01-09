@@ -42,6 +42,8 @@ public class TestPlugin extends JavaPlugin {
         this.lib.registerCommandHandler(new HelpTest(lib));
         this.lib.registerCommandHandler(new OptionalTest(this));
         this.lib.registerSubCommandHandler(new SubCommandTest(), "subtest|st");
+        this.lib.registerFragmentedCommandHandler(new FragmentTest(),
+                10000L, FragmentTest.MyContext::new, "fragtest|ft");
     }
 
     @Override

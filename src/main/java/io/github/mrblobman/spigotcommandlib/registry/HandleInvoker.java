@@ -38,15 +38,15 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-public class HandleInvoker {
-    private SubCommand subCommand;
-    private String cmdDesc;
+public class HandleInvoker implements Invoker {
+    protected SubCommand subCommand;
+    protected String cmdDesc;
 
-    private Object invocationTarget;
-    private Method method;
-    private Class<?> senderType;
-    private Argument[] arguments;
-    private int minArgsRequired;
+    protected Object invocationTarget;
+    protected Method method;
+    protected Class<?> senderType;
+    protected Argument[] arguments;
+    protected int minArgsRequired;
 
     HandleInvoker(SubCommand subCmd, String cmdDesc, Object invocationTarget, Method cmdHandler, Class<?> senderType, Argument[] arguments) {
         this.subCommand = subCmd;
@@ -70,16 +70,33 @@ public class HandleInvoker {
      * @param args the args in which to invoke the handler with.
      * @throws Exception if the method invocation fails for a non user based error, user based errors will directly be messaged to the player.
      */
-    public void invoke(CommandSender sender, String[] args) throws Exception {
+    @Override
+    public boolean invoke(SubCommand command, CommandSender sender, String[] args) throws Exception {
+        if (!this.subCommand.equals(command)) return false;
         if (!senderType.isInstance(sender)) {
             //Wrong sender type, cannot invoke
             sendIncorrectSenderMessage(sender);
-            return;
+            return true;
         }
+
+        List<Object> params = buildMethodParams(sender, args);
+        if (params == null) return true;
+
+        int i = 0;
+        Object[] callParams = new Object[params.size() + 1];
+        callParams[i++] = sender;
+        for (Object param : params) {
+            callParams[i++] = param;
+        }
+        method.invoke(invocationTarget, callParams);
+        return true;
+    }
+
+    protected List<Object> buildMethodParams(CommandSender sender, String[] args) {
         if (args.length < minArgsRequired) {
             //Not enough args, send usage
             sendUsage(sender);
-            return;
+            return null;
         }
         List<Object> params = new ArrayList<>();
         //Parse all required
@@ -89,12 +106,12 @@ public class HandleInvoker {
                     params.add(arguments[i].getFormatter().parse(args[i]));
                 } catch (ParseException e) {
                     sender.sendMessage(ChatColor.RED + "Invalid argument value " + args[i] + ". " + e.getLocalizedMessage());
-                    return;
+                    return null;
                 }
             } else {
                 //Invalid type param
                 sendUsage(sender);
-                return;
+                return null;
             }
         }
         //Parse all optional
@@ -117,53 +134,49 @@ public class HandleInvoker {
                     params.add(arguments[argIndex].getFormatter().parse(args[argIndex]));
                 } catch (ParseException e) {
                     sender.sendMessage(ChatColor.RED + "Invalid argument value " + args[argIndex] + ". " + e.getLocalizedMessage());
-                    return;
+                    return null;
                 }
             } else {
                 //Invalid type param
                 sendUsage(sender);
-                return;
+                return null;
             }
         }
 
-        Argument lastArg = arguments[arguments.length - 1];
-        if (!lastArg.isVarArgs()) {
-            if (argIndex < args.length) {
-                //They gave too many args
-                sendUsage(sender);
-                return;
-            }
-        } else {
-            //Build the varargs array
-            @SuppressWarnings("unchecked")
-            List<Object> varArgs = lastArg.getFormatter().createTypedList();
-            //Handle varargs
-            for (/*argIndex*/; argIndex < args.length; argIndex++) {
-                if (lastArg.getFormatter().canBeParsedFrom(args[argIndex])) {
-                    varArgs.add(lastArg.getFormatter().parse(args[argIndex]));
-                } else {
-                    //Invalid type param
+        if (arguments.length > 0) {
+            //We need to handle the last one
+            Argument lastArg = arguments[arguments.length - 1];
+            if (!lastArg.isVarArgs()) {
+                if (argIndex < args.length) {
+                    //They gave too many args
                     sendUsage(sender);
-                    return;
+                    return null;
                 }
+            } else {
+                //Build the varargs array
+                @SuppressWarnings("unchecked")
+                List<Object> varArgs = lastArg.getFormatter().createTypedList();
+                //Handle varargs
+                for (/*argIndex*/; argIndex < args.length; argIndex++) {
+                    if (lastArg.getFormatter().canBeParsedFrom(args[argIndex])) {
+                        varArgs.add(lastArg.getFormatter().parse(args[argIndex]));
+                    } else {
+                        //Invalid type param
+                        sendUsage(sender);
+                        return null;
+                    }
+                }
+                params.add(varArgs.toArray((Object[]) Array.newInstance(lastArg.getFormatter().getParseType(), varArgs.size())));
             }
-            params.add(varArgs.toArray((Object[]) Array.newInstance(lastArg.getFormatter().getParseType(), varArgs.size())));
         }
-
-        int i = 0;
-        Object[] callParams = new Object[params.size() + 1];
-        callParams[i++] = sender;
-        for (Object param : params) {
-            callParams[i++] = param;
-        }
-        method.invoke(invocationTarget, callParams);
+        return params;
     }
 
-    public void sendIncorrectSenderMessage(CommandSender sender) {
+    protected void sendIncorrectSenderMessage(CommandSender sender) {
         sender.sendMessage(ChatColor.RED + "This can only be executed by a(n) " + senderType.getSimpleName() + ". You are a(n) " + sender.getClass().getSimpleName() + ".");
     }
 
-    public void sendUsage(CommandSender sender) {
+    protected void sendUsage(CommandSender sender) {
         StringBuilder strBuilder = new StringBuilder(this.subCommand.toExecutableString());
         for (Argument arg : this.arguments) strBuilder.append(" ").append(arg.getDescriptiveName());
         if (sender instanceof Player) {
@@ -183,7 +196,9 @@ public class HandleInvoker {
         }
     }
 
-    public void sendDescription(CommandSender sender) {
+    @Override
+    public void sendDescription(SubCommand command, CommandSender sender) {
+        if (!this.subCommand.equals(command)) return;
         sender.sendMessage(ChatColor.AQUA + this.cmdDesc);
         StringBuilder strBuilder = new StringBuilder(this.subCommand.toExecutableString());
         for (Argument arg : this.arguments) strBuilder.append(" ").append(arg.getDescriptiveName());
@@ -211,7 +226,7 @@ public class HandleInvoker {
      * @param lines the lines in the tooltip
      * @return the constructed hover event
      */
-    public static HoverEvent buildTooltip(String... lines) {
+    protected static HoverEvent buildTooltip(String... lines) {
         String info = "display:{Name:" + ChatColor.WHITE;
         if (lines.length >= 1) {
             // \"Name\"

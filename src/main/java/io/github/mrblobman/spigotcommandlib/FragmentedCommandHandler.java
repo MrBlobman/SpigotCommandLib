@@ -21,24 +21,20 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package io.github.mrblobman.spigotcommandlib.commands;
+package io.github.mrblobman.spigotcommandlib;
 
-import io.github.mrblobman.spigotcommandlib.SubCommandHandle;
-import io.github.mrblobman.spigotcommandlib.SubCommandHandler;
-import org.bukkit.command.CommandSender;
+import java.util.UUID;
 
 /**
  * Created on 2016-01-07.
  */
-public class SubCommandTest implements SubCommandHandler {
+public interface FragmentedCommandHandler<T extends FragmentExecutionContext> {
 
-    @SubCommandHandle(permission = "subcommand.test", description = "Testing subcommand handler 1.")
-    private void subOne(CommandSender sender, String arg1) {
-        sender.sendMessage("Sub1: "+arg1);
-    }
-
-    @SubCommandHandle(permission = "subcommand.test", description = "Testing subcommand handler 2.")
-    private void subTwo(CommandSender sender, String arg1) {
-        sender.sendMessage("Sub2: "+arg1);
-    }
+    /**
+     * This method is invoked when the sender with the given name
+     * takes too long to complete a command.
+     * @param id the UUID of the sender
+     * @param context their execution context
+     */
+    void onTimeout(UUID id, T context);
 }

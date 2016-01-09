@@ -137,4 +137,27 @@ public class SubCommand {
 			return this.superCommand.toString()+" "+name;
 		}
 	}
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        SubCommand that = (SubCommand) o;
+
+        if (!name.equals(that.name)) return false;
+        if (superCommand != null ? !superCommand.equals(that.superCommand) : that.superCommand != null) return false;
+        if (!permissions.equals(that.permissions)) return false;
+        return aliases.equals(that.aliases);
+
+    }
+
+    @Override
+    public int hashCode() {
+        int result = name.hashCode();
+        result = 31 * result + (superCommand != null ? superCommand.hashCode() : 0);
+        result = 31 * result + permissions.hashCode();
+        result = 31 * result + aliases.hashCode();
+        return result;
+    }
 }

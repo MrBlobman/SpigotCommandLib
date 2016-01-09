@@ -29,11 +29,20 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * For best usage 'help message' compile your classes with parameter names.
+ * Marks this method as a fragment handler for a command that is executed in
+ * multiple parts.
+ * Created on 2016-01-07.
  */
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)
-public @interface SubCommandHandle {
+public @interface FragmentedCommandHandle {
+
+    /**
+     * The state in which the user must be in to invoke this
+     * command.
+     * @return the state required to use this fragment.
+     */
+    int state();
 
     /**
      * Specifies the sub command that this method handles.

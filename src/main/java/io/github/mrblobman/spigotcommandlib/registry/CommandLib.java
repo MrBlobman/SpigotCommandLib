@@ -57,10 +57,65 @@ public class CommandLib {
 	 * be flagged with the {@code @SubCommandHandle} annotation.
 	 * @see SubCommandHandle
 	 * @param handler the command handler
+     * @param cmdPrefix the sub required in addition to the sub command for the handle
 	 */
 	public void registerSubCommandHandler(SubCommandHandler handler, String... cmdPrefix) {
 		registry.register(handler, cmdPrefix);
 	}
+
+    /**
+     * Register a new handler. Methods handling specific commands must
+     * be flagged with the {@code #FragmentCommandHandle} annotation
+     * @see FragmentedCommandHandle
+     * @param handler the command handler
+     * @param timeout the time to keep any context instances loaded
+     * @param supplier a supplier to generate new context's when needed
+     * @param cmdPrefix the sub required in addition to the sub command for the handle
+     * @param <T> the type of the context
+     */
+    public <T extends FragmentExecutionContext> void registerFragmentedCommandHandler(FragmentedCommandHandler<T> handler, long timeout, FragmentedCommandContextSupplier<T> supplier, String... cmdPrefix) {
+        registry.register(handler, timeout, supplier, cmdPrefix);
+    }
+
+    /**
+     * Register a new handler. Methods handling specific commands must
+     * be flagged with the {@code #FragmentCommandHandle} annotation.
+     * With this method context does not unload after a specific time.
+     * @see FragmentedCommandHandle
+     * @param handler the command handler
+     * @param supplier a supplier to generate new context's when needed
+     * @param cmdPrefix the sub required in addition to the sub command for the handle
+     * @param <T> the type of the context
+     */
+    public <T extends FragmentExecutionContext> void registerFragmentedCommandHandler(FragmentedCommandHandler<T> handler, FragmentedCommandContextSupplier<T> supplier, String... cmdPrefix) {
+        registry.register(handler, 0, supplier, cmdPrefix);
+    }
+
+    /**
+     * Register a new handler. Methods handling specific commands must
+     * be flagged with the {@code #FragmentCommandHandle} annotation.
+     * With this method context does not unload after a specific time.
+     * This uses the default command context.
+     * @see FragmentedCommandHandle
+     * @param handler the command handler
+     * @param cmdPrefix the sub required in addition to the sub command for the handle
+     */
+    public void registerFragmentedCommandHandler(FragmentedCommandHandler<FragmentExecutionContext> handler, String... cmdPrefix) {
+        registry.register(handler, 0, FragmentExecutionContext::new, cmdPrefix);
+    }
+
+    /**
+     * Register a new handler. Methods handling specific commands must
+     * be flagged with the {@code #FragmentCommandHandle} annotation.
+     * This uses the default command context.
+     * @see FragmentedCommandHandle
+     * @param handler the command handler
+     * @param timeout the time to keep any context instances loaded
+     * @param cmdPrefix the sub required in addition to the sub command for the handle
+     */
+    public void registerFragmentedCommandHandler(FragmentedCommandHandler<FragmentExecutionContext> handler, long timeout, String... cmdPrefix) {
+        registry.register(handler, timeout, FragmentExecutionContext::new, cmdPrefix);
+    }
 	
 	/**
 	 * @return the plugin using this instance of the lib.
