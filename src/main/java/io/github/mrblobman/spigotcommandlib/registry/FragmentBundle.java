@@ -33,9 +33,7 @@ import net.md_5.bungee.api.ChatColor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -51,6 +49,7 @@ public class FragmentBundle<T extends FragmentExecutionContext> implements Invok
     private Cache<UUID, T> openContexts;
     private FragmentedCommandContextSupplier<T> contextGenerator;
     private Map<SubCommand, FragmentHandleInvoker[]> invokers;
+    private Set<SubCommand> hasDefaultStateHandler;
     private FragmentedCommandHandler<T> handler;
 
     FragmentBundle(FragmentedCommandHandler<T> handler, long timeout, FragmentedCommandContextSupplier<T> contextGenerator) {
@@ -58,10 +57,11 @@ public class FragmentBundle<T extends FragmentExecutionContext> implements Invok
                 .concurrencyLevel(CACHE_SPEC_CONCURRENCY_LEVEL)
                 .expireAfterAccess(timeout, TimeUnit.MILLISECONDS)
                 .removalListener((RemovalNotification<UUID, T> notification) ->
-                        handler.onTimeout(notification.getKey(), notification.getValue()))
+                        handler.onCleanup(notification.getKey(), notification.getValue()))
                 .build();
         this.contextGenerator = contextGenerator;
         this.invokers = new HashMap<>();
+        this.hasDefaultStateHandler = new HashSet<>();
         this.handler = handler;
     }
 
@@ -69,10 +69,11 @@ public class FragmentBundle<T extends FragmentExecutionContext> implements Invok
         this.openContexts = CacheBuilder.newBuilder()
                 .concurrencyLevel(CACHE_SPEC_CONCURRENCY_LEVEL)
                 .removalListener((RemovalNotification<UUID, T> notification) ->
-                        handler.onTimeout(notification.getKey(), notification.getValue()))
+                        handler.onCleanup(notification.getKey(), notification.getValue()))
                 .build();
         this.contextGenerator = contextGenerator;
         this.invokers = new HashMap<>();
+        this.hasDefaultStateHandler = new HashSet<>();
         this.handler = handler;
     }
 
@@ -83,6 +84,10 @@ public class FragmentBundle<T extends FragmentExecutionContext> implements Invok
      *                 1 at index 1 etc.
      */
     protected void addSubCommand(SubCommand command, FragmentHandleInvoker[] invokers) {
+        if (invokers[0] != null) {
+            //This is a default state command.
+            this.hasDefaultStateHandler.add(command);
+        }
         this.invokers.put(command, invokers);
     }
 
@@ -94,10 +99,13 @@ public class FragmentBundle<T extends FragmentExecutionContext> implements Invok
      */
     public T getContext(Player sender) {
         T context = openContexts.getIfPresent(sender.getUniqueId());
-        if (context == null) {
-            context = contextGenerator.get();
-            openContexts.put(sender.getUniqueId(), context);
-        }
+        if (context == null) return createContext(sender);
+        return context;
+    }
+
+    private T createContext(Player sender) {
+        T context = contextGenerator.get();
+        openContexts.put(sender.getUniqueId(), context);
         return context;
     }
 
@@ -119,7 +127,16 @@ public class FragmentBundle<T extends FragmentExecutionContext> implements Invok
         Player player = (Player) sender;
         T context = getContext(player);
         FragmentHandleInvoker invoker = getInvocationHandler(command, context.getState());
-        if (invoker == null) return false;
+        if (invoker == null) {
+            if (this.hasDefaultStateHandler.contains(command)) {
+                createContext(player);
+                invoker = getInvocationHandler(command, 0);
+            } else {
+                return false;
+            }
+        }
+        //Intellij doesn't realize that hasDefaultStateHandler -> getInvocationHandler(command, 0) != null
+        //noinspection ConstantConditions
         invoker.invoke(context, sender, args);
         return true;
     }
@@ -149,5 +166,9 @@ public class FragmentBundle<T extends FragmentExecutionContext> implements Invok
         if (invokers == null) return null;
         if (invokers.length <= state) return null;
         return invokers[state];
+    }
+
+    public void removeContext(UUID owner) {
+        this.openContexts.invalidate(owner);
     }
 }

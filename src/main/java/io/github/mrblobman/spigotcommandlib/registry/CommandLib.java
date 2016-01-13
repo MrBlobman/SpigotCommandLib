@@ -30,6 +30,9 @@ import org.bukkit.plugin.Plugin;
 import java.util.List;
 
 public class CommandLib {
+    public static final String NO_PERMISSION = "";
+    public static final int NO_TIMEOUT = 0;
+
 	private CommandRegistry registry;
 	private Plugin hook;
 	
@@ -59,49 +62,36 @@ public class CommandLib {
 	 * @param handler the command handler
      * @param cmdPrefix the sub required in addition to the sub command for the handle
 	 */
-	public void registerSubCommandHandler(SubCommandHandler handler, String... cmdPrefix) {
+	public void registerSubCommandHandler(SubCommandHandler handler, String[] cmdPrefix) {
 		registry.register(handler, cmdPrefix);
 	}
 
     /**
-     * Register a new handler. Methods handling specific commands must
-     * be flagged with the {@code #FragmentCommandHandle} annotation
-     * @see FragmentedCommandHandle
+     * Register a new handler. Methods that handle specific commands must
+     * be flagged with the {@code @SubCommandHandle} annotation.
+     * @see SubCommandHandle
      * @param handler the command handler
-     * @param timeout the time to keep any context instances loaded
-     * @param supplier a supplier to generate new context's when needed
+     * @param permission the permission required to execute all methods in this sub handler if
+     *                   not overridden in the annotation
      * @param cmdPrefix the sub required in addition to the sub command for the handle
-     * @param <T> the type of the context
      */
-    public <T extends FragmentExecutionContext> void registerFragmentedCommandHandler(FragmentedCommandHandler<T> handler, long timeout, FragmentedCommandContextSupplier<T> supplier, String... cmdPrefix) {
-        registry.register(handler, timeout, supplier, cmdPrefix);
+    public void registerSubCommandHandler(SubCommandHandler handler, String permission, String[] cmdPrefix) {
+        registry.register(handler, permission, cmdPrefix);
     }
 
     /**
      * Register a new handler. Methods handling specific commands must
      * be flagged with the {@code #FragmentCommandHandle} annotation.
-     * With this method context does not unload after a specific time.
      * @see FragmentedCommandHandle
      * @param handler the command handler
+     * @param permission the permission required to execute the command. See: {@link #NO_PERMISSION}
+     * @param timeout the time to keep any context instances loaded. See: {@link #NO_TIMEOUT}
      * @param supplier a supplier to generate new context's when needed
      * @param cmdPrefix the sub required in addition to the sub command for the handle
      * @param <T> the type of the context
      */
-    public <T extends FragmentExecutionContext> void registerFragmentedCommandHandler(FragmentedCommandHandler<T> handler, FragmentedCommandContextSupplier<T> supplier, String... cmdPrefix) {
-        registry.register(handler, 0, supplier, cmdPrefix);
-    }
-
-    /**
-     * Register a new handler. Methods handling specific commands must
-     * be flagged with the {@code #FragmentCommandHandle} annotation.
-     * With this method context does not unload after a specific time.
-     * This uses the default command context.
-     * @see FragmentedCommandHandle
-     * @param handler the command handler
-     * @param cmdPrefix the sub required in addition to the sub command for the handle
-     */
-    public void registerFragmentedCommandHandler(FragmentedCommandHandler<FragmentExecutionContext> handler, String... cmdPrefix) {
-        registry.register(handler, 0, FragmentExecutionContext::new, cmdPrefix);
+    public <T extends FragmentExecutionContext> void registerFragmentedCommandHandler(FragmentedCommandHandler<T> handler, String permission, long timeout, FragmentedCommandContextSupplier<T> supplier, String... cmdPrefix) {
+        registry.register(handler, permission, timeout, supplier, cmdPrefix);
     }
 
     /**
@@ -110,11 +100,12 @@ public class CommandLib {
      * This uses the default command context.
      * @see FragmentedCommandHandle
      * @param handler the command handler
-     * @param timeout the time to keep any context instances loaded
+     * @param permission the permission required to execute the command. See: {@link #NO_PERMISSION}
+     * @param timeout the time to keep any context instances loaded.. See: {@link #NO_TIMEOUT}
      * @param cmdPrefix the sub required in addition to the sub command for the handle
      */
-    public void registerFragmentedCommandHandler(FragmentedCommandHandler<FragmentExecutionContext> handler, long timeout, String... cmdPrefix) {
-        registry.register(handler, timeout, FragmentExecutionContext::new, cmdPrefix);
+    public void registerFragmentedCommandHandler(FragmentedCommandHandler<FragmentExecutionContext> handler, String permission, long timeout, String... cmdPrefix) {
+        registry.register(handler, permission, timeout, FragmentExecutionContext::new, cmdPrefix);
     }
 	
 	/**

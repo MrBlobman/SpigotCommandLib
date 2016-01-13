@@ -29,7 +29,8 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * For best usage 'help message' compile your classes with parameter names.
+ * Marks the annotated method as a method that handles sub command executions.
+ * All annotated methods should reside in a class that implements {@link SubCommandHandler}.
  */
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)

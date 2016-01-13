@@ -24,7 +24,8 @@
 package io.github.mrblobman.spigotcommandlib;
 
 /**
- * Created on 2016-01-07.
+ * Supplies the context manager with new context objects for
+ * use in {@link FragmentedCommandHandler}.
  */
 public interface FragmentedCommandContextSupplier<T> {
     /**

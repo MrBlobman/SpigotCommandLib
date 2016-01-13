@@ -24,7 +24,7 @@
 package io.github.mrblobman.spigotcommandlib;
 
 /**
- * Created on 9/12/2015.
+ * Thrown when an exception is thrown during command execution.
  */
 public class CommandException extends Exception {
     public CommandException(String message) {

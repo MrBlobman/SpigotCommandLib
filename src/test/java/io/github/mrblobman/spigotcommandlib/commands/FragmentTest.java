@@ -31,6 +31,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -48,7 +49,7 @@ public class FragmentTest implements FragmentedCommandHandler<FragmentTest.MyCon
     private static final int LOC_SET_STATE = 1;
 
     @Override
-    public void onTimeout(UUID id, MyContext context) {
+    public void onCleanup(UUID id, MyContext context) {
         Bukkit.getPlayer(id).sendMessage("Please start the command again, you took too long.");
     }
 

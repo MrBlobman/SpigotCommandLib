@@ -24,17 +24,16 @@
 package io.github.mrblobman.spigotcommandlib;
 
 /**
- * Created on 2016-01-08.
+ * Used to store state information that will be carried through
+ * fragment handlers. (See: {@link FragmentedCommandHandle}).
+ * The default implementation just handles state but registration
+ * may be on a class that extends this base.
  */
 public class FragmentExecutionContext {
     private int state;
 
-    public FragmentExecutionContext(int state) {
-        this.state = state;
-    }
-
     public FragmentExecutionContext() {
-        this(0);
+        this.state = 0;
     }
 
     /**
@@ -44,7 +43,7 @@ public class FragmentExecutionContext {
      * execution of a fragment command to occur.
      * @return the state of the executor bound to this context.
      */
-    public int getState() {
+    public final int getState() {
         return this.state;
     }
 
@@ -53,7 +52,7 @@ public class FragmentExecutionContext {
      * is in.
      * @param state the new state for this executor's context.
      */
-    public void setState(int state) {
+    public final void setState(int state) {
         this.state = state;
     }
 }

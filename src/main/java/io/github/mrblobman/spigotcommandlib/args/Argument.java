@@ -61,10 +61,6 @@ public class Argument<T> {
         }
     }
 
-    /**
-     * Equivalent to calling {@link Argument#Argument(ArgumentFormatter, Class, String, String[], int)}
-     * with the description derived from the formatter.
-     */
     public Argument(ArgumentFormatter<T> formatter, Class argClass, String name, int type) {
         this(formatter, argClass, name, null, type);
         this.desc = new String[formatter.getTypeDesc().length+1];

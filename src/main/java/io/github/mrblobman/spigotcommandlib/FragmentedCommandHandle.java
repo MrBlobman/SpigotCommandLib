@@ -30,8 +30,8 @@ import java.lang.annotation.Target;
 
 /**
  * Marks this method as a fragment handler for a command that is executed in
- * multiple parts.
- * Created on 2016-01-07.
+ * multiple parts. These marked methods should belong to a class that
+ * implements {@link FragmentedCommandHandler}
  */
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)
@@ -42,7 +42,7 @@ public @interface FragmentedCommandHandle {
      * command.
      * @return the state required to use this fragment.
      */
-    int state();
+    int state() default 0;
 
     /**
      * Specifies the sub command that this method handles.

@@ -33,6 +33,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.command.CommandMap;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import org.bukkit.event.Listener;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationTargetException;
@@ -40,9 +41,10 @@ import java.lang.reflect.Method;
 import java.util.*;
 import java.util.logging.Level;
 
-public class CommandRegistry {
+public class CommandRegistry implements Listener {
     private Map<String, SubCommand> baseCommands = new HashMap<>();
     private Map<SubCommand, Invoker> invokers = new HashMap<>();
+    private BundleCleaner bundleCleaner;
     private CommandMap bukkitCommandMap;
     private CommandLib lib;
 
@@ -62,6 +64,7 @@ public class CommandRegistry {
         if (rawMap == null || !(rawMap instanceof CommandMap)) {
             throw new InstantiationException("Could not grab the command map from the bukkit server.");
         }
+        this.bundleCleaner = new BundleCleaner(lib.getHook());
         this.bukkitCommandMap = (CommandMap) rawMap;
         this.lib = lib;
     }
@@ -87,6 +90,10 @@ public class CommandRegistry {
     }
 
     public void register(SubCommandHandler commandHandler, String... subCommandPrefix) {
+        register(commandHandler, "", subCommandPrefix);
+    }
+
+    public void register(SubCommandHandler commandHandler, String permission, String... subCommandPrefix) {
         for (Method method : commandHandler.getClass().getDeclaredMethods()) {
             SubCommandHandle handlerAnnotation = method.getAnnotation(SubCommandHandle.class);
             //Move on, this method isn't annotated
@@ -108,16 +115,17 @@ public class CommandRegistry {
             }
             if (!registerSingleMethod(method, commandHandler,
                     command,
-                    handlerAnnotation.permission(),
+                    handlerAnnotation.permission().isEmpty() ? permission : handlerAnnotation.permission(),
                     ChatColor.translateAlternateColorCodes('&', handlerAnnotation.description())))
                 continue;
             lib.getHook().getLogger().log(Level.INFO, "Successfully registered " + method.getName() + " in " + commandHandler.getClass().getSimpleName() + " for /" + Arrays.toString(handlerAnnotation.command()).replaceAll("[,\\[\\]]", ""));
         }
     }
 
-    public <T extends FragmentExecutionContext> void register(FragmentedCommandHandler<T> commandHandler, long timeout, FragmentedCommandContextSupplier<T> supplier, String... subCommandPrefix) {
+    public <T extends FragmentExecutionContext> void register(FragmentedCommandHandler<T> commandHandler, String permission, long timeout, FragmentedCommandContextSupplier<T> supplier, String... subCommandPrefix) {
         Class<?> contextClass = supplier.get().getClass(); //A small hack to get the generic type of the handler.
         FragmentBundle<T> bundle = timeout <= 0 ? new FragmentBundle<>(commandHandler, supplier) : new FragmentBundle<>(commandHandler, timeout, supplier);
+        bundleCleaner.addBundle(bundle);
 
         Map<SubCommand, Map<Integer, FragmentHandleInvoker>> invokers = new HashMap<>();
 
@@ -141,7 +149,7 @@ public class CommandRegistry {
                 command[subCommandPrefix.length] = method.getName();
             }
 
-            FragmentHandleInvoker invoker = buildFragmentInvoker(method, commandHandler, contextClass, command, handlerAnnotation.permission(), ChatColor.translateAlternateColorCodes('&', handlerAnnotation.description()));
+            FragmentHandleInvoker invoker = buildFragmentInvoker(method, commandHandler, contextClass, command, handlerAnnotation.permission().isEmpty() ? permission : handlerAnnotation.permission(), ChatColor.translateAlternateColorCodes('&', handlerAnnotation.description()));
             if (invoker == null) continue;
 
             //Handle state information

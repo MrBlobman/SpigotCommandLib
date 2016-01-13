@@ -29,7 +29,9 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * For best usage 'help message' compile your classes with parameter names.
+ * Marks the annotated method as a method that should be registered as a
+ * command. Methods marked with this method should belong to a class
+ * implementing {@link CommandHandler}.
  */
 @Target (ElementType.METHOD)
 @Retention (RetentionPolicy.RUNTIME)

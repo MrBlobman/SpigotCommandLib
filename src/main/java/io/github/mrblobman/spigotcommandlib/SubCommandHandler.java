@@ -24,6 +24,6 @@
 package io.github.mrblobman.spigotcommandlib;
 
 /**
- * Created on 2016-01-07.
+ * Used to mark this class as a class that contains {@link SubCommandHandle}s.
  */
 public interface SubCommandHandler { }
