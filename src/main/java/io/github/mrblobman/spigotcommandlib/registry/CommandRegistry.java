@@ -118,7 +118,7 @@ public class CommandRegistry implements Listener {
                     handlerAnnotation.permission().isEmpty() ? permission : handlerAnnotation.permission(),
                     ChatColor.translateAlternateColorCodes('&', handlerAnnotation.description())))
                 continue;
-            lib.getHook().getLogger().log(Level.INFO, "Successfully registered " + method.getName() + " in " + commandHandler.getClass().getSimpleName() + " for /" + Arrays.toString(handlerAnnotation.command()).replaceAll("[,\\[\\]]", ""));
+            lib.getHook().getLogger().log(Level.INFO, "Successfully registered " + method.getName() + " in " + commandHandler.getClass().getSimpleName() + " for /" + Arrays.toString(command).replaceAll("[,\\[\\]]", ""));
         }
     }
 
@@ -454,6 +454,7 @@ public class CommandRegistry implements Listener {
                     .filter(possibleArg -> possibleArg.startsWith(enteredCommand[enteredCommand.length - 1]))
                     .collect(Collectors.toList());
               JDK8+ */
+            /*JDK7 replacement start*/
             List<String> possibleCmds = new ArrayList<>();
             for (String subCmd : sub.getSubCommands()) {
                 if (subCmd.startsWith(enteredCommand[enteredCommand.length - 1])) {
@@ -461,6 +462,7 @@ public class CommandRegistry implements Listener {
                 }
             }
             return possibleCmds;
+            /*JDK7 replacement end*/
         } else {
             return sub.getSubCommands();
         }
@@ -506,7 +508,7 @@ public class CommandRegistry implements Listener {
         if (cmdGiven.length > 0) {
             SubCommand subCommand = getSubCommand(cmdGiven);
             if (subCommand == null) {
-                sender.sendMessage(ChatColor.YELLOW + "No commands match the query.");
+                sender.sendMessage(ChatColor.YELLOW + "No commands match the query "+Arrays.toString(cmdGiven)+".");
                 return;
             }
             String commandString = subCommand.toString();
@@ -518,12 +520,14 @@ public class CommandRegistry implements Listener {
                 }
             });
             JDK8+ */
+            /*JDK7 replacement start*/
             for (Map.Entry<SubCommand, Invoker> entry : this.invokers.entrySet()) {
                 if (entry.getKey().toString().startsWith(commandString) && entry.getKey().canExecute(sender)) {
                     entry.getValue().sendDescription(entry.getKey(), sender);
                     sentSomething[0] = true;
                 }
             }
+            /*JDK7 replacement end*/
             if (!sentSomething[0])
                 sender.sendMessage(ChatColor.RED + "No commands you are allowed to execute match the query.");
         } else {
@@ -535,12 +539,14 @@ public class CommandRegistry implements Listener {
                 }
             });
             JDK8+ */
+            /*JDK7 replacement start*/
             for (Map.Entry<SubCommand, Invoker> entry : this.invokers.entrySet()) {
                 if (entry.getKey().canExecute(sender)) {
                     entry.getValue().sendDescription(entry.getKey(), sender);
                     sentSomething[0] = true;
                 }
             }
+            /*JDK7 replacement end*/
             if (!sentSomething[0])
                 sender.sendMessage(ChatColor.RED + "No commands you are allowed to execute match the query.");
         }

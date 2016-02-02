@@ -33,6 +33,7 @@ import net.md_5.bungee.api.ChatColor;
 
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
+import org.bukkit.command.PluginCommand;
 
 /**
  * A bridge from a {@link Command} to our custom registry.
@@ -50,7 +51,7 @@ public class BaseCommand extends Command {
 	@Override
 	public boolean execute(CommandSender sender, String label, String[] args) {
 		//Put the command back together.
-		StringBuilder cmd = new StringBuilder(label);
+		StringBuilder cmd = new StringBuilder(super.getName());
 		for (String arg : args) {
 			cmd.append(" ");
 			cmd.append(arg);

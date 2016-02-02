@@ -141,21 +141,21 @@ public class SubCommand {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (!(o instanceof SubCommand)) return false;
 
         SubCommand that = (SubCommand) o;
 
-        if (!name.equals(that.name)) return false;
-        if (superCommand != null ? !superCommand.equals(that.superCommand) : that.superCommand != null) return false;
-        if (!permissions.equals(that.permissions)) return false;
-        return aliases.equals(that.aliases);
+        return subCommands.keySet().equals(that.subCommands.keySet())
+                && name.equals(that.name)
+                && permissions.equals(that.permissions)
+                && aliases.equals(that.aliases);
 
     }
 
     @Override
     public int hashCode() {
-        int result = name.hashCode();
-        result = 31 * result + (superCommand != null ? superCommand.hashCode() : 0);
+        int result = subCommands.hashCode();
+        result = 31 * result + name.hashCode();
         result = 31 * result + permissions.hashCode();
         result = 31 * result + aliases.hashCode();
         return result;
