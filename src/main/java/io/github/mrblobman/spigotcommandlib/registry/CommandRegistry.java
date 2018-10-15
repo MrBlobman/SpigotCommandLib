@@ -38,8 +38,11 @@ import org.bukkit.event.Listener;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.lang.reflect.Parameter;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
+import java.util.stream.Collectors;
 
 public class CommandRegistry implements Listener {
     private Map<String, SubCommand> baseCommands = new HashMap<>();
@@ -75,8 +78,7 @@ public class CommandRegistry implements Listener {
             //Move on, this method isn't annotated
             if (handlerAnnotation == null) continue;
             //Check that min requirements are met
-            //JDK8+ if (method.getParameterCount() < 1) {
-            if (method.getParameterTypes().length < 1) {
+            if (method.getParameterCount() < 1) {
                 lib.getHook().getLogger().log(Level.WARNING, "Cannot register method " + method.getName() + ". Not enough parameters. Requires first param as sender.");
                 continue;
             }
@@ -99,8 +101,7 @@ public class CommandRegistry implements Listener {
             //Move on, this method isn't annotated
             if (handlerAnnotation == null) continue;
             //Check that min requirements are met
-            //JDK8+ if (method.getParameterCount() < 1) {
-            if (method.getParameterTypes().length < 1) {
+            if (method.getParameterCount() < 1) {
                 lib.getHook().getLogger().log(Level.WARNING, "Cannot register method " + method.getName() + ". Not enough parameters. Requires first param as sender.");
                 continue;
             }
@@ -134,8 +135,7 @@ public class CommandRegistry implements Listener {
             //Move on, this method isn't annotated
             if (handlerAnnotation == null) continue;
             //Check that min requirements are met
-            //JDK8+ if (method.getParameterCount() < 1) {
-            if (method.getParameterTypes().length < 2) {
+            if (method.getParameterCount() < 2) {
                 lib.getHook().getLogger().log(Level.WARNING, "Cannot register method " + method.getName() + ". Not enough parameters. Requires first param as context and second as sender.");
                 continue;
             }
@@ -175,8 +175,7 @@ public class CommandRegistry implements Listener {
     }
 
     private FragmentHandleInvoker buildFragmentInvoker(Method method, FragmentedCommandHandler commandHandler, Class<?> contextType, String[] command, String permission, String description) {
-        //JDK8+ Parameter[] methodParams = method.getParameters();
-        Class<?>[] methodParams = method.getParameterTypes();
+        Parameter[] methodParams = method.getParameters();
         //JDK7 annotation workaround
         ArgDescription[] paramArgDesc = getArgDescs(method);
         if (paramArgDesc[0] != null || paramArgDesc[1] != null) {
@@ -191,8 +190,7 @@ public class CommandRegistry implements Listener {
         //Build parsing data arrays
         Argument<?>[] arguments = new Argument[methodParams.length - 2];
         for (int i = 2; i < methodParams.length - (method.isVarArgs() ? 1 : 0); i++) {
-            //JDK8+ Class<?> paramType = methodParams[i].getType();
-            Class<?> paramType = methodParams[i];
+            Class<?> paramType = methodParams[i].getType();
             ArgumentFormatter<?> formatter = FormatterMapping.lookup(paramType);
             if (formatter == null) {
                 lib.getHook().getLogger().log(Level.WARNING, "Cannot register method " + method.getName() + ". Unknown parameter parse type (" + paramType.getName() + "). Accepted types are String, Integer, Long, Short, Double, Float and org.bukkit.Color.");
@@ -204,8 +202,7 @@ public class CommandRegistry implements Listener {
             if (desc != null && !desc.name().equals("")) {
                 name = desc.name();
             } else {
-                //JDK8+ name = methodParams[i].isNamePresent() ? methodParams[i].getName() : "arg" + (i - 1);
-                name = "arg" + (i - 2);
+                name = methodParams[i].isNamePresent() ? methodParams[i].getName() : "arg" + (i - 2);
             }
             if (desc != null && desc.description().length != 0) {
                 arguments[i - 2] = new Argument<>(formatter, paramType, name, desc.description(), type);
@@ -216,7 +213,7 @@ public class CommandRegistry implements Listener {
         if (method.isVarArgs()) {
             int lastIndex = methodParams.length - 1;
             //We need to handle the last arg differently because it is a var arg
-            Class<?> paramType = methodParams[lastIndex];
+            Class<?> paramType = methodParams[lastIndex].getType();
             ArgumentFormatter<?> formatter = FormatterMapping.lookpArray(paramType);
             if (formatter == null) {
                 lib.getHook().getLogger().log(Level.WARNING, "Cannot register method " + method.getName() + ". Unknown parameter parse type (" + paramType.getName() + "). Accepted types are String, Integer, Long, Short, Double, Float and org.bukkit.Color.");
@@ -228,8 +225,7 @@ public class CommandRegistry implements Listener {
             if (desc != null && !desc.name().equals("")) {
                 name = desc.name();
             } else {
-                //JDK8+ name = methodParams[lastIndex].isNamePresent() ? methodParams[lastIndex].getName() : "arg" + (lastIndex);
-                name = "arg" + (lastIndex);
+                name = methodParams[lastIndex].isNamePresent() ? methodParams[lastIndex].getName() : "arg" + (lastIndex);
             }
             if (desc != null && desc.description().length != 0) {
                 arguments[lastIndex - 2] = new Argument<>(formatter, paramType, name, desc.description(), Argument.VAR_ARGS);
@@ -238,14 +234,14 @@ public class CommandRegistry implements Listener {
             }
         }
         //Verify the context type
-        Class<?> contextMethodParamType = methodParams[0];
+        Class<?> contextMethodParamType = methodParams[0].getType();
         if (!contextType.isAssignableFrom(contextMethodParamType)) {
             lib.getHook().getLogger().log(Level.WARNING, "Cannot register method " + method.getName() + ". The first parameter must be the same type as the generic type of the class.");
             return null;
         }
 
         //Verify the sender type is valid
-        Class<?> senderType = methodParams[1];
+        Class<?> senderType = methodParams[1].getType();
         if (!Player.class.isAssignableFrom(senderType)) {
             lib.getHook().getLogger().log(Level.WARNING, "Cannot register method " + method.getName() + ". Invalid sender type " + senderType.getSimpleName() + ". Must be accessible from org.bukkit.Player.");
             return null;
@@ -262,8 +258,7 @@ public class CommandRegistry implements Listener {
     }
 
     private boolean registerSingleMethod(Method method, Object commandHandler, String[] command, String permission, String description) {
-        //JDK8+ Parameter[] methodParams = method.getParameters();
-        Class<?>[] methodParams = method.getParameterTypes();
+        Parameter[] methodParams = method.getParameters();
         //JDK7 annotation workaround
         ArgDescription[] paramArgDesc = getArgDescs(method);
         if (paramArgDesc[0] != null) {
@@ -278,8 +273,7 @@ public class CommandRegistry implements Listener {
         //Build parsing data arrays
         Argument<?>[] arguments = new Argument[methodParams.length - 1];
         for (int i = 1; i < methodParams.length - (method.isVarArgs() ? 1 : 0); i++) {
-            //JDK8+ Class<?> paramType = methodParams[i].getType();
-            Class<?> paramType = methodParams[i];
+            Class<?> paramType = methodParams[i].getType();
             ArgumentFormatter<?> formatter = FormatterMapping.lookup(paramType);
             if (formatter == null) {
                 lib.getHook().getLogger().log(Level.WARNING, "Cannot register method " + method.getName() + ". Unknown parameter parse type (" + paramType.getName() + "). Accepted types are String, Integer, Long, Short, Double, Float and org.bukkit.Color.");
@@ -291,8 +285,7 @@ public class CommandRegistry implements Listener {
             if (desc != null && !desc.name().equals("")) {
                 name = desc.name();
             } else {
-                //JDK8+ name = methodParams[i].isNamePresent() ? methodParams[i].getName() : "arg" + (i - 1);
-                name = "arg" + (i - 1);
+                name = methodParams[i].isNamePresent() ? methodParams[i].getName() : "arg" + (i - 1);
             }
             if (desc != null && desc.description().length != 0) {
                 arguments[i - 1] = new Argument<>(formatter, paramType, name, desc.description(), type);
@@ -303,7 +296,7 @@ public class CommandRegistry implements Listener {
         if (method.isVarArgs()) {
             int lastIndex = methodParams.length - 1;
             //We need to handle the last arg differently because it is a var arg
-            Class<?> paramType = methodParams[lastIndex];
+            Class<?> paramType = methodParams[lastIndex].getType();
             ArgumentFormatter<?> formatter = FormatterMapping.lookpArray(paramType);
             if (formatter == null) {
                 lib.getHook().getLogger().log(Level.WARNING, "Cannot register method " + method.getName() + ". Unknown parameter parse type (" + paramType.getName() + "). Accepted types are String, Integer, Long, Short, Double, Float and org.bukkit.Color.");
@@ -315,8 +308,7 @@ public class CommandRegistry implements Listener {
             if (desc != null && !desc.name().equals("")) {
                 name = desc.name();
             } else {
-                //JDK8+ name = methodParams[lastIndex].isNamePresent() ? methodParams[lastIndex].getName() : "arg" + (lastIndex);
-                name = "arg" + (lastIndex);
+                name = methodParams[lastIndex].isNamePresent() ? methodParams[lastIndex].getName() : "arg" + (lastIndex);
             }
             if (desc != null && desc.description().length != 0) {
                 arguments[lastIndex - 1] = new Argument<>(formatter, paramType, name, desc.description(), Argument.VAR_ARGS);
@@ -325,7 +317,7 @@ public class CommandRegistry implements Listener {
             }
         }
         //Verify the sender type is valid
-        Class<?> senderType = methodParams[0];
+        Class<?> senderType = methodParams[0].getType();
         if (!CommandSender.class.isAssignableFrom(senderType)) {
             lib.getHook().getLogger().log(Level.WARNING, "Cannot register method " + method.getName() + ". Invalid sender type " + senderType.getSimpleName() + ". Must be accessible from org.bukkit.CommandSender.");
             return false;
@@ -457,26 +449,16 @@ public class CommandRegistry implements Listener {
             sub = this.getSubCommand(Arrays.copyOfRange(enteredCommand, 0, enteredCommand.length - 1));
             if (sub == null) {
                 //Nope they are lost
-                return new ArrayList<>();
+                return Collections.emptyList();
             }
-            /*return sub.getSubCommands().stream()
-                    .filter(possibleArg -> possibleArg.startsWith(enteredCommand[enteredCommand.length - 1]))
+            String lastEntered = enteredCommand[enteredCommand.length - 1];
+            return sub.getSubCommands().stream()
+                    .filter(it -> it.startsWith(lastEntered))
                     .collect(Collectors.toList());
-              JDK8+ */
-            /*JDK7 replacement start*/
-            List<String> possibleCmds = new ArrayList<>();
-            for (String subCmd : sub.getSubCommands()) {
-                String lastArg = enteredCommand[enteredCommand.length - 1];
-                if (subCmd.length() > lastArg.length() && subCmd.startsWith(lastArg)) {
-                    possibleCmds.add(subCmd);
-                }
-            }
-            return possibleCmds;
-            /*JDK7 replacement end*/
         } else {
             if (sub.canBeInvokedBy(enteredCommand[enteredCommand.length - 1])) {
                 //We have a complete command
-                return new ArrayList<>();
+                return Collections.emptyList();
             }
             return sub.getSubCommands();
         }
@@ -529,42 +511,24 @@ public class CommandRegistry implements Listener {
                 return;
             }
             String commandString = subCommand.toString();
-            boolean[] sentSomething = { false };
-            /*this.invokers.forEach((cmd, invoker) -> {
+            AtomicBoolean sentSomething = new AtomicBoolean(false);
+            this.invokers.forEach((cmd, invoker) -> {
                 if (cmd.toString().startsWith(commandString) && cmd.canExecute(sender)) {
-                    invoker.sendDescription(sender);
-                    sentSomething[0] = true;
+                    invoker.sendDescription(cmd, sender);
+                    sentSomething.set(true);
                 }
             });
-            JDK8+ */
-            /*JDK7 replacement start*/
-            for (Map.Entry<SubCommand, Invoker> entry : this.invokers.entrySet()) {
-                if (entry.getKey().toString().startsWith(commandString) && entry.getKey().canExecute(sender)) {
-                    entry.getValue().sendDescription(entry.getKey(), sender);
-                    sentSomething[0] = true;
-                }
-            }
-            /*JDK7 replacement end*/
-            if (!sentSomething[0])
+            if (!sentSomething.get())
                 sender.sendMessage(ChatColor.RED + "No commands you are allowed to execute match the query.");
         } else {
-            boolean[] sentSomething = { false };
-            /*this.invokers.forEach((cmd, invoker) -> {
+            AtomicBoolean sentSomething = new AtomicBoolean(false);
+            this.invokers.forEach((cmd, invoker) -> {
                 if (cmd.canExecute(sender)) {
-                    invoker.sendDescription(sender);
-                    sentSomething[0] = true;
+                    invoker.sendDescription(cmd, sender);
+                    sentSomething.set(true);
                 }
             });
-            JDK8+ */
-            /*JDK7 replacement start*/
-            for (Map.Entry<SubCommand, Invoker> entry : this.invokers.entrySet()) {
-                if (entry.getKey().canExecute(sender)) {
-                    entry.getValue().sendDescription(entry.getKey(), sender);
-                    sentSomething[0] = true;
-                }
-            }
-            /*JDK7 replacement end*/
-            if (!sentSomething[0])
+            if (!sentSomething.get())
                 sender.sendMessage(ChatColor.RED + "No commands you are allowed to execute match the query.");
         }
     }

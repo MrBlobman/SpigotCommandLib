@@ -26,6 +26,8 @@ package io.github.mrblobman.spigotcommandlib.registry;
 import org.bukkit.permissions.Permissible;
 
 import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class SubCommand {
     private Map<String, SubCommand> subCommands = new HashMap<>();
@@ -99,9 +101,7 @@ public class SubCommand {
     }
 
     public List<String> getSubCommands() {
-        List<String> subCommands = new ArrayList<>();
-        subCommands.addAll(this.subCommands.keySet());
-        return subCommands;
+        return new ArrayList<>(this.subCommands.keySet());
     }
 
     public void addSubCommand(SubCommand cmd) {
@@ -125,10 +125,8 @@ public class SubCommand {
     public String toString() {
         String name = this.name;
         if (!this.aliases.isEmpty()) {
-            StringBuilder sb = new StringBuilder();
-            for (String alias : aliases) sb.append("|").append(alias);
-            name = name + sb.toString();
-            //JDK8+ name = name + "|" + this.aliases.stream().collect(Collectors.joining("|"));
+            name = this.aliases.stream()
+                    .collect(Collectors.joining("|", name + "|", ""));
         }
         if (this.superCommand == null) {
             return "/" + name;
