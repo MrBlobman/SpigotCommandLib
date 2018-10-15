@@ -34,11 +34,11 @@ public class SubCommandTest implements SubCommandHandler {
 
     @SubCommandHandle(permission = "subcommand.test", description = "Testing subcommand handler 1.")
     private void subOne(CommandSender sender, String arg1) {
-        sender.sendMessage("Sub1: "+arg1);
+        sender.sendMessage("Sub1: " + arg1);
     }
 
     @SubCommandHandle(permission = "subcommand.test", description = "Testing subcommand handler 2.")
     private void subTwo(CommandSender sender, String arg1) {
-        sender.sendMessage("Sub2: "+arg1);
+        sender.sendMessage("Sub2: " + arg1);
     }
 }

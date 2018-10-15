@@ -42,10 +42,13 @@ public class FragmentHandleInvoker extends HandleInvoker {
     /**
      * Invoke this handler with the given arguments. The args are all String args that follow the sub command.<br>
      * Ex: /baseCmd sub1 sub2 arg0 arg1 arg2
+     *
      * @param fragmentContext the context in which this command was executed.
-     * @param sender the command sender. If this type doesn't match the sender type it will inform the sender.
-     * @param args the args in which to invoke the handler with.
-     * @throws Exception if the method invocation fails for a non user based error, user based errors will directly be messaged to the player.
+     * @param sender          the command sender. If this type doesn't match the sender type it will inform the sender.
+     * @param args            the args in which to invoke the handler with.
+     *
+     * @throws Exception if the method invocation fails for a non user based error, user based errors will directly be
+     *                   messaged to the player.
      */
     public void invoke(FragmentExecutionContext fragmentContext, CommandSender sender, String[] args) throws Exception {
         if (!senderType.isInstance(sender)) {

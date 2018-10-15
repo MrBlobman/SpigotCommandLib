@@ -79,7 +79,8 @@ public class FragmentBundle<T extends FragmentExecutionContext> implements Invok
 
     /**
      * Add a sub command handler set to this bundle.
-     * @param command the subcommand that will invoke an invoker
+     *
+     * @param command  the subcommand that will invoke an invoker
      * @param invokers an array of invokers with the invoker for state 0 at index 0,
      *                 1 at index 1 etc.
      */
@@ -93,9 +94,11 @@ public class FragmentBundle<T extends FragmentExecutionContext> implements Invok
 
     /**
      * Get the context bound to the sender.
+     *
      * @param sender the command sender.
+     *
      * @return the context for the sender or new context if there
-     * is no existing context.
+     *         is no existing context.
      */
     public T getContext(Player sender) {
         T context = openContexts.getIfPresent(sender.getUniqueId());
@@ -112,10 +115,13 @@ public class FragmentBundle<T extends FragmentExecutionContext> implements Invok
     /**
      * Invoke the appropriate {@link FragmentHandleInvoker} for the sender
      * who sent the given args
+     *
      * @param command the command in this bundle that is being invoked.
-     * @param sender the command sender who is invoking this command
-     * @param args the arguments passed into the command.
+     * @param sender  the command sender who is invoking this command
+     * @param args    the arguments passed into the command.
+     *
      * @return true if an invocation was preformed. false if there is nothing to invoke.
+     *
      * @throws Exception if any errors occur during invocation
      */
     @Override
@@ -154,7 +160,8 @@ public class FragmentBundle<T extends FragmentExecutionContext> implements Invok
             return;
         }
         if (invokers.length <= context.getState() || context.getState() < 0 || invokers[context.getState()] == null) {
-            sender.sendMessage(ChatColor.RED + "Illegal state. You cannot execute this command in your current state.");
+            //The description should simply exclude illegal states
+            //sender.sendMessage(ChatColor.RED + "Illegal state. You cannot execute this command in your current state.");
             return;
         }
         invokers[context.getState()].sendDescription(command, sender);

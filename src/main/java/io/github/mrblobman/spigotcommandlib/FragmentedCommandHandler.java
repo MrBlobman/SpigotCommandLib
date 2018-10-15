@@ -37,7 +37,8 @@ public interface FragmentedCommandHandler<T extends FragmentExecutionContext> {
      * handler. Do not count on this method executing immediately
      * on timeout, the cleanup time is arbitrary but this hook allows
      * you to be notified of the context's removal from memory.
-     * @param id the UUID of the sender
+     *
+     * @param id      the UUID of the sender
      * @param context their execution context
      */
     void onCleanup(UUID id, T context);

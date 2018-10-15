@@ -41,6 +41,7 @@ public class FragmentExecutionContext {
      * this context is in.<br>
      * The executor must be in the correct state in order for
      * execution of a fragment command to occur.
+     *
      * @return the state of the executor bound to this context.
      */
     public final int getState() {
@@ -50,6 +51,7 @@ public class FragmentExecutionContext {
     /**
      * Set the current state that the executor bound to this context
      * is in.
+     *
      * @param state the new state for this executor's context.
      */
     public final void setState(int state) {

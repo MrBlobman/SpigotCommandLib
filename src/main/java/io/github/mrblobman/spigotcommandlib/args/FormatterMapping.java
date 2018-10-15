@@ -37,6 +37,7 @@ import static io.github.mrblobman.spigotcommandlib.args.ArgumentFormatter.*;
 public class FormatterMapping {
     private static Map<Class, ArgumentFormatter> SUPPORTED_FORMATTERS = new HashMap<>();
     private static Map<Class, ArgumentFormatter> SUPPORTED_ARRAY_FORMATTERS = new HashMap<>();
+
     static {
         registerMapping(String.class, STRING);
         registerMapping(Boolean.class, BOOLEAN);
@@ -65,7 +66,9 @@ public class FormatterMapping {
 
     /**
      * Get the formatter that can format the given type.
+     *
      * @param type the type to lookup
+     *
      * @return the formatter used to format the given type.
      */
     public static ArgumentFormatter lookup(Class type) {
@@ -77,7 +80,9 @@ public class FormatterMapping {
      * should be an array (but will simply return null if not) and
      * the lookup will return the formatter that can be used to
      * parse each element in the array.
+     *
      * @param type the type to lookup
+     *
      * @return the formatter used to format the given type.
      */
     public static ArgumentFormatter lookpArray(Class type) {

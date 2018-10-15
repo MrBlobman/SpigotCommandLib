@@ -24,7 +24,9 @@
 package io.github.mrblobman.spigotcommandlib.registry;
 
 import com.google.common.base.Defaults;
-import com.google.common.primitives.Primitives;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonPrimitive;
 import io.github.mrblobman.spigotcommandlib.args.Argument;
 import io.github.mrblobman.spigotcommandlib.args.ParseException;
 import net.md_5.bungee.api.ChatColor;
@@ -35,7 +37,6 @@ import org.bukkit.entity.Player;
 import java.lang.reflect.Array;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 public class HandleInvoker implements Invoker {
@@ -66,9 +67,12 @@ public class HandleInvoker implements Invoker {
     /**
      * Invoke this handler with the given arguments. The args are all String args that follow the sub command.<br>
      * Ex: /baseCmd sub1 sub2 arg0 arg1 arg2
+     *
      * @param sender the command sender. If this type doesn't match the sender type it will inform the sender.
-     * @param args the args in which to invoke the handler with.
-     * @throws Exception if the method invocation fails for a non user based error, user based errors will directly be messaged to the player.
+     * @param args   the args in which to invoke the handler with.
+     *
+     * @throws Exception if the method invocation fails for a non user based error, user based errors will directly be
+     *                   messaged to the player.
      */
     @Override
     public boolean invoke(SubCommand command, CommandSender sender, String[] args) throws Exception {
@@ -223,24 +227,31 @@ public class HandleInvoker implements Invoker {
      * Build the HoverEvent that would result in the display
      * of lines when you hover over the component the event is
      * for.
+     *
      * @param lines the lines in the tooltip
+     *
      * @return the constructed hover event
      */
     protected static HoverEvent buildTooltip(String... lines) {
-        String info = "display:{Name:" + ChatColor.WHITE;
-        if (lines.length >= 1) {
-            // \"Name\"
-            info += lines[0];
-            if (lines.length >= 2) {
-                info = info + ", Lore:[";
-                for (int i = 1; i < lines.length; i++) {
-                    info = info + "\"" + ChatColor.WHITE + lines[i] + "\", ";
-                }
-                info = info.substring(0, info.length() - 2);
-                info = info + "]";
+        JsonObject item = new JsonObject();
+        item.addProperty("id", "minecraft:stone");
+        if (lines.length == 0)
+            return new HoverEvent(HoverEvent.Action.SHOW_ITEM, new BaseComponent[]{ new TextComponent(item.toString()) });
+
+        JsonObject tag = new JsonObject();
+        item.add("tag", tag);
+
+        JsonObject display = new JsonObject();
+        tag.add("display", display);
+
+        display.addProperty("Name", ChatColor.WHITE + lines[0]);
+        if (lines.length > 1) {
+            JsonArray lore = new JsonArray();
+            tag.add("Lore", lore);
+            for (int i = 1; i < lines.length; i++) {
+                lore.add(new JsonPrimitive(ChatColor.WHITE + lines[i]));
             }
-            info = info + "}";
         }
-        return new HoverEvent(HoverEvent.Action.SHOW_ITEM, new BaseComponent[]{new TextComponent("{id:1,tag:{" + info + "}}")});
+        return new HoverEvent(HoverEvent.Action.SHOW_ITEM, new BaseComponent[]{ new TextComponent(item.toString()) });
     }
 }

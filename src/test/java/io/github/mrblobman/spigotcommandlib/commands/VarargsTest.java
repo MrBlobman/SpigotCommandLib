@@ -30,8 +30,6 @@ import net.md_5.bungee.api.ChatColor;
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 
-import java.util.Arrays;
-
 /**
  * Created on 2016-01-02.
  */

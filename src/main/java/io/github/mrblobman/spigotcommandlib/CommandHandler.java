@@ -30,4 +30,4 @@ package io.github.mrblobman.spigotcommandlib;
  * Methods belonging to this class that handle commands must
  * be marked with the {@link CommandHandle} annotation.
  */
-public interface CommandHandler { }
+public interface CommandHandler {}

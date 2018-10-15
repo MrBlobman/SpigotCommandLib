@@ -30,8 +30,9 @@ package io.github.mrblobman.spigotcommandlib;
 public interface FragmentedCommandContextSupplier<T> {
     /**
      * Create a new command context for passing between commands.
+     *
      * @return the new context created for a sender in state 0
-     * of a fragmented command.
+     *         of a fragmented command.
      */
     T get();
 }

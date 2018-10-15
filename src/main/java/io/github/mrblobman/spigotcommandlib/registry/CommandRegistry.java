@@ -108,7 +108,7 @@ public class CommandRegistry implements Listener {
             if (handlerAnnotation.command().length > 0) {
                 command = Arrays.copyOf(subCommandPrefix, subCommandPrefix.length + handlerAnnotation.command().length);
                 for (int i = 0; i < handlerAnnotation.command().length; i++)
-                    command[subCommandPrefix.length+i] = handlerAnnotation.command()[i];
+                    command[subCommandPrefix.length + i] = handlerAnnotation.command()[i];
             } else {
                 command = Arrays.copyOf(subCommandPrefix, subCommandPrefix.length + 1);
                 command[subCommandPrefix.length] = method.getName();
@@ -143,7 +143,7 @@ public class CommandRegistry implements Listener {
             if (handlerAnnotation.command().length > 0) {
                 command = Arrays.copyOf(subCommandPrefix, subCommandPrefix.length + handlerAnnotation.command().length);
                 for (int i = 0; i < handlerAnnotation.command().length; i++)
-                    command[subCommandPrefix.length+i] = handlerAnnotation.command()[i];
+                    command[subCommandPrefix.length + i] = handlerAnnotation.command()[i];
             } else {
                 command = Arrays.copyOf(subCommandPrefix, subCommandPrefix.length + 1);
                 command[subCommandPrefix.length] = method.getName();
@@ -161,11 +161,11 @@ public class CommandRegistry implements Listener {
                 invokersForSub.put(handlerAnnotation.state(), invoker);
             } else {
                 if (invokersForSub.containsKey(handlerAnnotation.state())) {
-                    lib.getHook().getLogger().log(Level.WARNING, "Overwriting handle for " + cmd.toString() + " with " +method.getName() + " because both fragments have the same sub command and state.");
+                    lib.getHook().getLogger().log(Level.WARNING, "Overwriting handle for " + cmd.toString() + " with " + method.getName() + " because both fragments have the same sub command and state.");
                 }
                 invokersForSub.put(handlerAnnotation.state(), invoker);
             }
-            lib.getHook().getLogger().log(Level.INFO, "Successfully registered fragment " + method.getName() + " in " + commandHandler.getClass().getSimpleName() + " for /" + Arrays.toString(handlerAnnotation.command()).replaceAll("[,\\[\\]]", "") + " when in state " + handlerAnnotation.state());
+            lib.getHook().getLogger().log(Level.INFO, "Successfully registered fragment " + method.getName() + " in " + commandHandler.getClass().getSimpleName() + " for " + cmd.toString() + " when in state " + handlerAnnotation.state());
         }
 
         for (Map.Entry<SubCommand, Map<Integer, FragmentHandleInvoker>> entry : invokers.entrySet()) {
@@ -401,11 +401,18 @@ public class CommandRegistry implements Listener {
         SubCommand superCmd = addBaseCommand(command[0], permission);
         for (int i = 1; i < command.length; i++) {
             String[] subCommandAliases = command[i].split("\\|");
-            SubCommand subCmd;
-            if (subCommandAliases.length > 1) {
-                subCmd = new SubCommand(subCommandAliases[0], Arrays.copyOfRange(subCommandAliases, 1, subCommandAliases.length), permission, superCmd);
-            } else {
-                subCmd = new SubCommand(subCommandAliases[0], new String[0], permission, superCmd);
+            SubCommand subCmd = null;
+            for (String s : subCommandAliases) {
+                subCmd = superCmd.getSubCommand(s);
+                if (subCmd != null) break; //We found it
+            }
+            if (subCmd == null) {
+                //We could find an existing one, so many a new one
+                if (subCommandAliases.length > 1) {
+                    subCmd = new SubCommand(subCommandAliases[0], Arrays.copyOfRange(subCommandAliases, 1, subCommandAliases.length), permission, superCmd);
+                } else {
+                    subCmd = new SubCommand(subCommandAliases[0], new String[0], permission, superCmd);
+                }
             }
             subCmd.addPermission(permission);
             superCmd.addSubCommand(subCmd);
@@ -438,7 +445,9 @@ public class CommandRegistry implements Listener {
 
     /**
      * Usage designed for tab complete.
+     *
      * @param enteredCommand the partial command entered
+     *
      * @return a List containing the possible sub commands that may follow, will never return null
      */
     public List<String> getPossibleSubCommands(String[] enteredCommand) {
@@ -457,22 +466,30 @@ public class CommandRegistry implements Listener {
             /*JDK7 replacement start*/
             List<String> possibleCmds = new ArrayList<>();
             for (String subCmd : sub.getSubCommands()) {
-                if (subCmd.startsWith(enteredCommand[enteredCommand.length - 1])) {
+                String lastArg = enteredCommand[enteredCommand.length - 1];
+                if (subCmd.length() > lastArg.length() && subCmd.startsWith(lastArg)) {
                     possibleCmds.add(subCmd);
                 }
             }
             return possibleCmds;
             /*JDK7 replacement end*/
         } else {
+            if (sub.canBeInvokedBy(enteredCommand[enteredCommand.length - 1])) {
+                //We have a complete command
+                return new ArrayList<>();
+            }
             return sub.getSubCommands();
         }
     }
 
     /**
      * Handle the given command.
-     * @param sender the {@link CommandSender} that sent the command
+     *
+     * @param sender  the {@link CommandSender} that sent the command
      * @param command the command split into parts. The command followed by each argument
+     *
      * @return true iff the base command is registered with this registry and an attempt to execute was preformed
+     *
      * @throws CommandException if an error occurs while handling the command.
      */
     protected boolean handleCommand(CommandSender sender, String[] command) throws CommandException {
@@ -508,11 +525,11 @@ public class CommandRegistry implements Listener {
         if (cmdGiven.length > 0) {
             SubCommand subCommand = getSubCommand(cmdGiven);
             if (subCommand == null) {
-                sender.sendMessage(ChatColor.YELLOW + "No commands match the query "+Arrays.toString(cmdGiven)+".");
+                sender.sendMessage(ChatColor.YELLOW + "No commands match the query " + Arrays.toString(cmdGiven) + ".");
                 return;
             }
             String commandString = subCommand.toString();
-            boolean[] sentSomething = {false};
+            boolean[] sentSomething = { false };
             /*this.invokers.forEach((cmd, invoker) -> {
                 if (cmd.toString().startsWith(commandString) && cmd.canExecute(sender)) {
                     invoker.sendDescription(sender);
@@ -531,7 +548,7 @@ public class CommandRegistry implements Listener {
             if (!sentSomething[0])
                 sender.sendMessage(ChatColor.RED + "No commands you are allowed to execute match the query.");
         } else {
-            boolean[] sentSomething = {false};
+            boolean[] sentSomething = { false };
             /*this.invokers.forEach((cmd, invoker) -> {
                 if (cmd.canExecute(sender)) {
                     invoker.sendDescription(sender);
@@ -556,7 +573,7 @@ public class CommandRegistry implements Listener {
         int max = -1;
         for (int i : map.keySet())
             if (i > max) max = i;
-        FragmentHandleInvoker[] invokers = new FragmentHandleInvoker[max+1];
+        FragmentHandleInvoker[] invokers = new FragmentHandleInvoker[max + 1];
         for (int i = 0; i < invokers.length; i++) {
             invokers[i] = map.get(i);
         }

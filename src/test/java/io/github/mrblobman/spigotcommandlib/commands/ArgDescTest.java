@@ -35,8 +35,8 @@ public class ArgDescTest implements CommandHandler {
 
     @CommandHandle(command = "argdesctest|adtest", permission = "test.argdesc", description = "Test the argument descriptions.")
     public void argDescTest(CommandSender sender,
-                            @ArgDescription(description = {"Type in the title of what", "you want echoed."}, name = "echoRespTitle") String sampleArg,
-                            @ArgDescription(description = {"Type in what you want", "echoed."}, name = "echoResp") String... rest) {
+                            @ArgDescription(description = { "Type in the title of what", "you want echoed." }, name = "echoRespTitle") String sampleArg,
+                            @ArgDescription(description = { "Type in what you want", "echoed." }, name = "echoResp") String... rest) {
         sender.sendMessage(sampleArg);
         sender.sendMessage(rest);
     }
