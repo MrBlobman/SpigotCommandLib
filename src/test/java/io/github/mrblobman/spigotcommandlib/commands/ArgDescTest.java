@@ -1,4 +1,4 @@
-/**
+/*
  * The MIT License (MIT)
  *
  * Copyright (c) 2016 MrBlobman
@@ -28,9 +28,6 @@ import io.github.mrblobman.spigotcommandlib.CommandHandler;
 import io.github.mrblobman.spigotcommandlib.args.ArgDescription;
 import org.bukkit.command.CommandSender;
 
-/**
- * Created on 2016-01-02.
- */
 public class ArgDescTest implements CommandHandler {
 
     @CommandHandle(command = "argdesctest|adtest", permission = "test.argdesc", description = "Test the argument descriptions.")

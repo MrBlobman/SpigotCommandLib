@@ -1,4 +1,4 @@
-/**
+/*
  * The MIT License (MIT)
  *
  * Copyright (c) 2016 MrBlobman
@@ -30,9 +30,6 @@ import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.plugin.Plugin;
 
-/**
- * Created on 2016-01-07.
- */
 public class OptionalTest implements CommandHandler {
     private Plugin plugin;
 

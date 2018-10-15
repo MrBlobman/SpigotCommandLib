@@ -1,4 +1,4 @@
-/**
+/*
  * The MIT License (MIT)
  *
  * Copyright (c) 2016 MrBlobman
@@ -30,9 +30,6 @@ import org.bukkit.command.CommandSender;
 import java.lang.reflect.Method;
 import java.util.List;
 
-/**
- * Created on 2016-01-07.
- */
 public class FragmentHandleInvoker extends HandleInvoker {
 
     FragmentHandleInvoker(SubCommand subCmd, String cmdDesc, Object invocationTarget, Method cmdHandler, Class<?> senderType, Argument[] arguments) {

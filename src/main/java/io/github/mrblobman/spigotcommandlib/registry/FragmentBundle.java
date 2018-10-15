@@ -1,4 +1,4 @@
-/**
+/*
  * The MIT License (MIT)
  *
  * Copyright (c) 2016 MrBlobman
@@ -36,9 +36,6 @@ import org.bukkit.entity.Player;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
-/**
- * Created on 2016-01-07.
- */
 public class FragmentBundle<T extends FragmentExecutionContext> implements Invoker {
     private static final int CACHE_SPEC_CONCURRENCY_LEVEL = 1;
     /* The term cache may be a little bit misleading, we

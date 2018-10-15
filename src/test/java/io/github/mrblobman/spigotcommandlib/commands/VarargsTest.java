@@ -1,4 +1,4 @@
-/**
+/*
  * The MIT License (MIT)
  *
  * Copyright (c) 2016 MrBlobman
@@ -30,9 +30,6 @@ import net.md_5.bungee.api.ChatColor;
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 
-/**
- * Created on 2016-01-02.
- */
 public class VarargsTest implements CommandHandler {
     @CommandHandle(command = "broadcast|bc", permission = "test.permission", description = "Send a message to the entire server.")
     public void bc(CommandSender sender,

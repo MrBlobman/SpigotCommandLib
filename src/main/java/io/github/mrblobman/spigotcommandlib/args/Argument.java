@@ -1,4 +1,4 @@
-/**
+/*
  * The MIT License (MIT)
  *
  * Copyright (c) 2016 MrBlobman
@@ -27,9 +27,6 @@ import net.md_5.bungee.api.ChatColor;
 
 import java.util.Arrays;
 
-/**
- * Created on 11/12/2015.
- */
 public class Argument<T> {
     public static final int REQUIRED = 0;
     public static final int OPTIONAL = 1;

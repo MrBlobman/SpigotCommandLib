@@ -1,4 +1,4 @@
-/**
+/*
  * The MIT License (MIT)
  *
  * Copyright (c) 2016 MrBlobman
@@ -27,9 +27,6 @@ import io.github.mrblobman.spigotcommandlib.commands.*;
 import io.github.mrblobman.spigotcommandlib.registry.CommandLib;
 import org.bukkit.plugin.java.JavaPlugin;
 
-/**
- * Created on 2016-01-02.
- */
 public class TestPlugin extends JavaPlugin {
     private CommandLib lib;
 

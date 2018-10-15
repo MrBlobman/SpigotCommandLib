@@ -1,4 +1,4 @@
-/**
+/*
  * The MIT License (MIT)
  *
  * Copyright (c) 2016 MrBlobman
@@ -32,9 +32,6 @@ import org.bukkit.plugin.Plugin;
 import java.util.ArrayList;
 import java.util.Collection;
 
-/**
- * Created on 2016-01-12.
- */
 public class BundleCleaner implements Listener {
     private Collection<FragmentBundle> managedBundles;
 

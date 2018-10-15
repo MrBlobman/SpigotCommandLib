@@ -1,4 +1,4 @@
-/**
+/*
  * The MIT License (MIT)
  *
  * Copyright (c) 2016 MrBlobman
@@ -38,7 +38,8 @@ public class FragmentExecutionContext {
 
     /**
      * Get the current state that the executor bound to
-     * this context is in.<br>
+     * this context is in.
+     * <p>
      * The executor must be in the correct state in order for
      * execution of a fragment command to occur.
      *

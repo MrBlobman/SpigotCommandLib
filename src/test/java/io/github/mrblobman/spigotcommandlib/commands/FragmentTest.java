@@ -1,4 +1,4 @@
-/**
+/*
  * The MIT License (MIT)
  *
  * Copyright (c) 2016 MrBlobman
@@ -36,9 +36,6 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
 
-/**
- * Created on 2016-01-08.
- */
 public class FragmentTest implements FragmentedCommandHandler<FragmentTest.MyContext> {
     public static class MyContext extends FragmentExecutionContext {
         protected Set<Location> location;

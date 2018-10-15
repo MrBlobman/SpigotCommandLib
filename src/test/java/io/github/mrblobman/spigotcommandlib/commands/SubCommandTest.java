@@ -1,4 +1,4 @@
-/**
+/*
  * The MIT License (MIT)
  *
  * Copyright (c) 2016 MrBlobman
@@ -27,9 +27,6 @@ import io.github.mrblobman.spigotcommandlib.SubCommandHandle;
 import io.github.mrblobman.spigotcommandlib.SubCommandHandler;
 import org.bukkit.command.CommandSender;
 
-/**
- * Created on 2016-01-07.
- */
 public class SubCommandTest implements SubCommandHandler {
 
     @SubCommandHandle(permission = "subcommand.test", description = "Testing subcommand handler 1.")

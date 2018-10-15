@@ -1,4 +1,4 @@
-/**
+/*
  * The MIT License (MIT)
  *
  * Copyright (c) 2016 MrBlobman
@@ -25,7 +25,6 @@ package io.github.mrblobman.spigotcommandlib.args;
 
 /**
  * Thrown when an argument's value cannot be parsed.
- * Created on 2016-01-07.
  */
 public class ParseException extends RuntimeException {
     public ParseException() {

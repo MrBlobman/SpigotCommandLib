@@ -1,4 +1,4 @@
-/**
+/*
  * The MIT License (MIT)
  *
  * Copyright (c) 2016 MrBlobman
@@ -25,9 +25,6 @@ package io.github.mrblobman.spigotcommandlib.registry;
 
 import org.bukkit.command.CommandSender;
 
-/**
- * Created on 2016-01-08.
- */
 public interface Invoker {
 
     /**

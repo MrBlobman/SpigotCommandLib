@@ -1,4 +1,4 @@
-/**
+/*
  * The MIT License (MIT)
  *
  * Copyright (c) 2016 MrBlobman
@@ -31,9 +31,6 @@ import java.util.Map;
 
 import static io.github.mrblobman.spigotcommandlib.args.ArgumentFormatter.*;
 
-/**
- * Created on 2016-01-07.
- */
 public class FormatterMapping {
     private static Map<Class, ArgumentFormatter> SUPPORTED_FORMATTERS = new HashMap<>();
     private static Map<Class, ArgumentFormatter> SUPPORTED_ARRAY_FORMATTERS = new HashMap<>();

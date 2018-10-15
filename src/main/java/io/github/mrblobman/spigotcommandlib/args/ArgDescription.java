@@ -1,4 +1,4 @@
-/**
+/*
  * The MIT License (MIT)
  *
  * Copyright (c) 2016 MrBlobman
@@ -30,11 +30,11 @@ import java.lang.annotation.Target;
 
 /**
  * Provide an argument description for an argument to use
- * rather than the default. <br>
+ * rather than the default.
+ * <p>
  * Note: Leaving the default value
  * will result in the command manager deciding on the values
  * itself.
- * Created on 11/12/2015.
  */
 @Target(ElementType.PARAMETER)
 @Retention(RetentionPolicy.RUNTIME)

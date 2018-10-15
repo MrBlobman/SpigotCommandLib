@@ -1,4 +1,4 @@
-/**
+/*
  * The MIT License (MIT)
  *
  * Copyright (c) 2016 MrBlobman
@@ -25,8 +25,8 @@ package io.github.mrblobman.spigotcommandlib;
 
 /**
  * Used to link all command handlers. The interface is
- * empty.<br>
- *
+ * empty.
+ * <p>
  * Methods belonging to this class that handle commands must
  * be marked with the {@link CommandHandle} annotation.
  */
