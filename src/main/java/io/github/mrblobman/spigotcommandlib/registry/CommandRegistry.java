@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2016 MrBlobman
+ * Copyright (c) 2018 MrBlobman
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -24,10 +24,7 @@
 package io.github.mrblobman.spigotcommandlib.registry;
 
 import io.github.mrblobman.spigotcommandlib.*;
-import io.github.mrblobman.spigotcommandlib.args.ArgDescription;
-import io.github.mrblobman.spigotcommandlib.args.Argument;
-import io.github.mrblobman.spigotcommandlib.args.ArgumentFormatter;
-import io.github.mrblobman.spigotcommandlib.args.FormatterMapping;
+import io.github.mrblobman.spigotcommandlib.args.*;
 import net.md_5.bungee.api.ChatColor;
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandMap;
@@ -197,7 +194,7 @@ public class CommandRegistry implements Listener {
                 return null;
             }
             ArgDescription desc = paramArgDesc[i];
-            int type = (desc != null && desc.optional() ? Argument.OPTIONAL : Argument.REQUIRED);
+            ArgumentKind kind = desc != null && desc.optional() ? ArgumentKind.OPTIONAL : ArgumentKind.REQUIRED;
             String name;
             if (desc != null && !desc.name().equals("")) {
                 name = desc.name();
@@ -205,9 +202,9 @@ public class CommandRegistry implements Listener {
                 name = methodParams[i].isNamePresent() ? methodParams[i].getName() : "arg" + (i - 2);
             }
             if (desc != null && desc.description().length != 0) {
-                arguments[i - 2] = new Argument<>(formatter, paramType, name, desc.description(), type);
+                arguments[i - 2] = new Argument<>(kind, formatter, paramType, name, Arrays.asList(desc.description()));
             } else {
-                arguments[i - 2] = new Argument<>(formatter, paramType, name, type);
+                arguments[i - 2] = new Argument<>(kind, formatter, paramType, name);
             }
         }
         if (method.isVarArgs()) {
@@ -228,9 +225,9 @@ public class CommandRegistry implements Listener {
                 name = methodParams[lastIndex].isNamePresent() ? methodParams[lastIndex].getName() : "arg" + (lastIndex);
             }
             if (desc != null && desc.description().length != 0) {
-                arguments[lastIndex - 2] = new Argument<>(formatter, paramType, name, desc.description(), Argument.VAR_ARGS);
+                arguments[lastIndex - 2] = new Argument<>(ArgumentKind.VAR_ARGS, formatter, paramType, name, Arrays.asList(desc.description()));
             } else {
-                arguments[lastIndex - 2] = new Argument<>(formatter, paramType, name, Argument.VAR_ARGS);
+                arguments[lastIndex - 2] = new Argument<>(ArgumentKind.VAR_ARGS, formatter, paramType, name);
             }
         }
         //Verify the context type
@@ -280,7 +277,7 @@ public class CommandRegistry implements Listener {
                 return false;
             }
             ArgDescription desc = paramArgDesc[i];
-            int type = (desc != null && desc.optional() ? Argument.OPTIONAL : Argument.REQUIRED);
+            ArgumentKind kind = desc != null && desc.optional() ? ArgumentKind.OPTIONAL : ArgumentKind.REQUIRED;
             String name;
             if (desc != null && !desc.name().equals("")) {
                 name = desc.name();
@@ -288,9 +285,9 @@ public class CommandRegistry implements Listener {
                 name = methodParams[i].isNamePresent() ? methodParams[i].getName() : "arg" + (i - 1);
             }
             if (desc != null && desc.description().length != 0) {
-                arguments[i - 1] = new Argument<>(formatter, paramType, name, desc.description(), type);
+                arguments[i - 1] = new Argument<>(kind, formatter, paramType, name, Arrays.asList(desc.description()));
             } else {
-                arguments[i - 1] = new Argument<>(formatter, paramType, name, type);
+                arguments[i - 1] = new Argument<>(kind, formatter, paramType, name);
             }
         }
         if (method.isVarArgs()) {
@@ -311,9 +308,9 @@ public class CommandRegistry implements Listener {
                 name = methodParams[lastIndex].isNamePresent() ? methodParams[lastIndex].getName() : "arg" + (lastIndex);
             }
             if (desc != null && desc.description().length != 0) {
-                arguments[lastIndex - 1] = new Argument<>(formatter, paramType, name, desc.description(), Argument.VAR_ARGS);
+                arguments[lastIndex - 1] = new Argument<>(ArgumentKind.VAR_ARGS, formatter, paramType, name, Arrays.asList(desc.description()));
             } else {
-                arguments[lastIndex - 1] = new Argument<>(formatter, paramType, name, Argument.VAR_ARGS);
+                arguments[lastIndex - 1] = new Argument<>(ArgumentKind.VAR_ARGS, formatter, paramType, name);
             }
         }
         //Verify the sender type is valid

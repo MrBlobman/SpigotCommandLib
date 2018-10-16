@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2016 MrBlobman
+ * Copyright (c) 2018 MrBlobman
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -23,47 +23,42 @@
  */
 package io.github.mrblobman.spigotcommandlib.args;
 
-import net.md_5.bungee.api.ChatColor;
+import org.bukkit.ChatColor;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
 
 public class Argument<T> {
-    public static final int REQUIRED = 0;
-    public static final int OPTIONAL = 1;
-    public static final int VAR_ARGS = 2;
+    private final ArgumentKind kind;
+    private final ArgumentFormatter<T> formatter;
+    private final Class type;
 
-    private ArgumentFormatter<T> formatter;
-    private Class type;
-    private String name;
-    private String[] desc;
-    private boolean isOptional;
-    private boolean isVarArgs;
+    private final String name;
+    private final List<String> desc;
 
-    public Argument(ArgumentFormatter<T> formatter, Class argClass, String name, String[] desc, int type) {
+    public Argument(ArgumentKind kind, ArgumentFormatter<T> formatter, Class argClass, String name, List<String> desc) {
+        this.kind = kind;
         this.formatter = formatter;
         this.type = argClass;
         this.name = name;
-        this.desc = desc;
-        if (desc != null)
-            for (int i = 0; i < desc.length; i++) desc[i] = ChatColor.translateAlternateColorCodes('&', desc[i]);
-        if (type == OPTIONAL) {
-            isOptional = true;
-            isVarArgs = false;
-        } else if (type == VAR_ARGS) {
-            isOptional = true;
-            isVarArgs = true;
+
+        if (desc == null) {
+            this.desc = new ArrayList<>(formatter.getTypeDesc().length + 1);
+            this.desc.add(ChatColor.YELLOW + formatter.getTypeName());
+            Arrays.stream(formatter.getTypeDesc())
+                    .map(s -> ChatColor.GRAY + s)
+                    .forEachOrdered(this.desc::add);
         } else {
-            isOptional = false;
-            isVarArgs = false;
+            this.desc = desc.stream()
+                    .map(s -> ChatColor.translateAlternateColorCodes('&', s))
+                    .collect(Collectors.toList());
         }
     }
 
-    public Argument(ArgumentFormatter<T> formatter, Class argClass, String name, int type) {
-        this(formatter, argClass, name, null, type);
-        this.desc = new String[formatter.getTypeDesc().length + 1];
-        this.desc[0] = ChatColor.YELLOW + formatter.getTypeName();
-        for (int i = 1; i < this.desc.length; i++)
-            this.desc[i] = ChatColor.GRAY + formatter.getTypeDesc()[i - 1];
+    public Argument(ArgumentKind kind, ArgumentFormatter<T> formatter, Class argClass, String name) {
+        this(kind, formatter, argClass, name, null);
     }
 
     /**
@@ -72,7 +67,7 @@ public class Argument<T> {
      * @return the name of this argument.
      */
     public String getName() {
-        return name;
+        return this.name;
     }
 
     /**
@@ -82,9 +77,7 @@ public class Argument<T> {
      * @return the descriptive name for this argument
      */
     public String getDescriptiveName() {
-        if (isVarArgs()) return "[" + getName() + "]...";
-        else if (isOptional()) return "[" + getName() + "]";
-        else return "<" + getName() + ">";
+        return this.kind.formatNameInArgPattern(this.getName());
     }
 
     /**
@@ -93,7 +86,7 @@ public class Argument<T> {
      *
      * @return the description of the argument.
      */
-    public String[] getDescription() {
+    public List<String> getDescription() {
         return this.desc;
     }
 
@@ -123,7 +116,7 @@ public class Argument<T> {
      * @return true iff this argument is of varying length, false otherwise.
      */
     public boolean isVarArgs() {
-        return this.isVarArgs;
+        return this.kind.isVarArgs();
     }
 
     /**
@@ -133,17 +126,20 @@ public class Argument<T> {
      * @return true iff this argument is optional, false otherwise.
      */
     public boolean isOptional() {
-        return this.isOptional;
+        return this.kind.isOptional();
+    }
+
+    public ArgumentKind getKind() {
+        return this.kind;
     }
 
     @Override
     public String toString() {
         return "Argument{" +
-                "formatter=" + formatter +
-                ", name='" + name + '\'' +
-                ", desc=" + Arrays.toString(desc) +
-                ", isOptional=" + isOptional +
-                ", isVarArgs=" + isVarArgs +
+                "formatter=" + this.formatter +
+                ", name='" + this.name + '\'' +
+                ", desc=" + this.desc +
+                ", kind=" + this.kind +
                 '}';
     }
 }

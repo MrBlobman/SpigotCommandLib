@@ -24,10 +24,8 @@ license {
 }
 build.dependsOn 'licenseFormat'
 
-compileJava {
-    sourceCompatibility = 1.8
-    targetCompatibility = 1.8
-}
+sourceCompatibility = '1.8'
+targetCompatibility = '1.8'
 
 repositories {
     //Spigot
@@ -36,10 +34,13 @@ repositories {
     maven { url = 'https://oss.sonatype.org/content/repositories/snapshots' }
     //Rest of the libs
     mavenCentral()
+
+    mavenLocal()
 }
 
 dependencies {
-    compile group: 'org.spigotmc', name: 'spigot-api', version: '1.8.8-R0.1-SNAPSHOT'
+    //compile group: 'org.spigotmc', name: 'spigot-api', version: '1.8.8-R0.1-SNAPSHOT'
+    compile group: 'org.spigotmc', name: 'spigot-api', version: '1.9.2-R0.1-SNAPSHOT'
 }
 
 sourceSets {

@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2016 MrBlobman
+ * Copyright (c) 2018 MrBlobman
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -37,6 +37,7 @@ import org.bukkit.entity.Player;
 import java.lang.reflect.Array;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class HandleInvoker implements Invoker {
@@ -190,7 +191,7 @@ public class HandleInvoker implements Invoker {
             message.event(buildTooltip(ChatColor.YELLOW + this.subCommand.toString(),
                     ChatColor.GRAY + "Click to paste this command's",
                     ChatColor.GRAY + "format in your chat box."));
-            for (Argument arg : this.arguments) {
+            for (Argument<?> arg : this.arguments) {
                 message.append(" " + arg.getDescriptiveName());
                 message.event(buildTooltip(arg.getDescription()));
             }
@@ -213,7 +214,7 @@ public class HandleInvoker implements Invoker {
             message.event(buildTooltip(ChatColor.YELLOW + this.subCommand.toString(),
                     ChatColor.GRAY + "Click to paste this command's",
                     ChatColor.GRAY + "format in your chat box."));
-            for (Argument arg : this.arguments) {
+            for (Argument<?> arg : this.arguments) {
                 message.append(" " + arg.getDescriptiveName());
                 message.event(buildTooltip(arg.getDescription()));
             }
@@ -221,6 +222,10 @@ public class HandleInvoker implements Invoker {
         } else {
             sender.sendMessage(ChatColor.YELLOW + strBuilder.toString());
         }
+    }
+
+    protected static HoverEvent buildTooltip(String... lines) {
+        return buildTooltip(Arrays.asList(lines));
     }
 
     /**
@@ -232,10 +237,12 @@ public class HandleInvoker implements Invoker {
      *
      * @return the constructed hover event
      */
-    protected static HoverEvent buildTooltip(String... lines) {
+    protected static HoverEvent buildTooltip(List<String> lines) {
         JsonObject item = new JsonObject();
         item.addProperty("id", "minecraft:stone");
-        if (lines.length == 0)
+        item.addProperty("Count", 1);
+
+        if (lines.isEmpty())
             return new HoverEvent(HoverEvent.Action.SHOW_ITEM, new BaseComponent[]{ new TextComponent(item.toString()) });
 
         JsonObject tag = new JsonObject();
@@ -244,13 +251,12 @@ public class HandleInvoker implements Invoker {
         JsonObject display = new JsonObject();
         tag.add("display", display);
 
-        display.addProperty("Name", ChatColor.WHITE + lines[0]);
-        if (lines.length > 1) {
+        display.addProperty("Name", ChatColor.WHITE + lines.get(0));
+        if (lines.size() > 1) {
             JsonArray lore = new JsonArray();
-            tag.add("Lore", lore);
-            for (int i = 1; i < lines.length; i++) {
-                lore.add(new JsonPrimitive(ChatColor.WHITE + lines[i]));
-            }
+            for (int i = 1; i < lines.size(); i++)
+                lore.add(new JsonPrimitive(ChatColor.WHITE + lines.get(i)));
+            display.add("Lore", lore);
         }
         return new HoverEvent(HoverEvent.Action.SHOW_ITEM, new BaseComponent[]{ new TextComponent(item.toString()) });
     }

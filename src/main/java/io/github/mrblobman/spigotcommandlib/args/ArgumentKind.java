@@ -21,9 +21,32 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package io.github.mrblobman.spigotcommandlib;
+package io.github.mrblobman.spigotcommandlib.args;
 
-/**
- * Used to mark this class as a class that contains {@link SubCommandHandle}s.
- */
-public interface SubCommandHandler {}
+public enum ArgumentKind {
+    REQUIRED(false, false, "<%s>"),
+    OPTIONAL(true, false, "[%s]"),
+    VAR_ARGS(true, true, "[%s]...");
+
+    private final boolean optional;
+    private final boolean varArgs;
+    private final String argFormatString;
+
+    ArgumentKind(boolean optional, boolean varArgs, String argFormatString) {
+        this.optional = optional;
+        this.varArgs = varArgs;
+        this.argFormatString = argFormatString;
+    }
+
+    public boolean isOptional() {
+        return this.optional;
+    }
+
+    public boolean isVarArgs() {
+        return this.varArgs;
+    }
+
+    public String formatNameInArgPattern(String name) {
+        return String.format(this.argFormatString, name);
+    }
+}
