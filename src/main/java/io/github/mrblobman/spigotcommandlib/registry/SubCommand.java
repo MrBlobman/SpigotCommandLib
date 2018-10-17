@@ -147,23 +147,16 @@ public class SubCommand {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof SubCommand)) return false;
-
+        if (o == null || getClass() != o.getClass()) return false;
         SubCommand that = (SubCommand) o;
-
-        return subCommands.keySet().equals(that.subCommands.keySet())
-                && name.equals(that.name)
-                && permissions.equals(that.permissions)
-                && aliases.equals(that.aliases);
-
+        return Objects.equals(name, that.name) &&
+                Objects.equals(superCommand, that.superCommand) &&
+                Objects.equals(permissions, that.permissions) &&
+                Objects.equals(aliases, that.aliases);
     }
 
     @Override
     public int hashCode() {
-        int result = subCommands.hashCode();
-        result = 31 * result + name.hashCode();
-        result = 31 * result + permissions.hashCode();
-        result = 31 * result + aliases.hashCode();
-        return result;
+        return Objects.hash(name, superCommand, permissions, aliases);
     }
 }

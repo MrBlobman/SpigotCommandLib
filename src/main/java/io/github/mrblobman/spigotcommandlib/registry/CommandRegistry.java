@@ -412,6 +412,7 @@ public class CommandRegistry implements Listener {
 
     private SubCommand addBaseCommand(String baseCommand, String permission) {
         String[] baseAliases = baseCommand.split("\\|");
+
         SubCommand base = getBaseCommand(baseAliases[0]);
         if (base != null) {
             base.addPermission(permission);
@@ -420,15 +421,19 @@ public class CommandRegistry implements Listener {
                     base.getAliases().add(baseAliases[i]);
             return base;
         }
+
         if (baseAliases.length > 1) {
             base = new SubCommand(baseAliases[0], Arrays.copyOfRange(baseAliases, 1, baseAliases.length), permission, null);
         } else {
             base = new SubCommand(baseAliases[0], new String[0], permission, null);
         }
+
         for (String alias : baseAliases)
             this.baseCommands.put(alias.toLowerCase(), base);
+
         this.bukkitCommandMap.register(base.getName(), this.lib.getHook().getName().toLowerCase(),
                 new BaseCommand(this.lib, base.getName(), "/" + base.getName(), "/" + base.getName(), base.getAliases()));
+
         return base;
     }
 
@@ -490,7 +495,9 @@ public class CommandRegistry implements Listener {
         }
         //Invoke the command
         Invoker invoker = this.invokers.get(cmd);
-        if (invoker == null) return false;
+        if (invoker == null) {
+            return false;
+        }
         //i is index of first arg
         try {
             invoker.invoke(cmd, sender, i < command.length ? Arrays.copyOfRange(command, i, command.length) : new String[0]);
