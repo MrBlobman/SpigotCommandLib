@@ -29,8 +29,8 @@ import org.bukkit.command.CommandSender;
 
 public class ExplicitSubCommand implements CommandHandler {
     @CommandHandle(command = "explicitsub", description = "Base cmd")
-    public void explicitsub(CommandSender sender) {
-        sender.sendMessage("explicitsub base");
+    public void explicitsub(CommandSender sender, String arg) {
+        sender.sendMessage("explicitsub base arg: " + arg);
     }
 
     @CommandHandle(command = {"explicitsub", "subone"}, description = "Sub one")
