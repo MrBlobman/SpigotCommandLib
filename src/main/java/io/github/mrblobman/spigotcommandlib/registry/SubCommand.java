@@ -27,27 +27,41 @@ import org.bukkit.permissions.Permissible;
 
 import java.util.*;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
-public class SubCommand {
-    private Map<String, SubCommand> subCommands = new HashMap<>();
-    private String name;
-    private SubCommand superCommand;
-    private Set<String> permissions;
-    private List<String> aliases;
+public class SubCommand implements Comparable<SubCommand> {
+    private final Map<String, SubCommand> subCommands;
+    private final String name;
+
+    private final Set<String> permissions;
+    private final List<String> aliases;
+
+    private final SubCommand superCommand;
+    private final int length;
+    // Lowercase to make searches case insensitive
+    private final Set<String> allNames;
 
     SubCommand(String name, String[] aliases, String permission, SubCommand superCommand, SubCommand... subCommands) {
         this.name = name;
-        this.aliases = new ArrayList<>();
-        for (String alias : aliases) {
-            this.aliases.add(alias.toLowerCase());
-        }
-        this.permissions = new HashSet<>();
+
+        this.aliases = Arrays.stream(aliases)
+                .map(String::toLowerCase)
+                .collect(Collectors.toList());
+
+        this.permissions = new LinkedHashSet<>();
         this.permissions.add(permission);
-        for (SubCommand cmd : subCommands) {
+
+        this.subCommands = new LinkedHashMap<>();
+        for (SubCommand cmd : subCommands)
             this.subCommands.put(cmd.getName().toLowerCase(), cmd);
-        }
+
         this.superCommand = superCommand;
+        this.length = superCommand != null ? superCommand.length + 1 : 1;
+
+        this.allNames = new LinkedHashSet<>();
+        this.allNames.add(this.name.toLowerCase());
+        this.aliases.stream()
+                .map(String::toLowerCase)
+                .forEach(this.allNames::add);
     }
 
     public String getName() {
@@ -59,7 +73,7 @@ public class SubCommand {
     }
 
     public boolean canBeInvokedBy(String name) {
-        return this.name.equals(name) || this.aliases.contains(name);
+        return this.allNames.contains(name);
     }
 
     /**
@@ -70,12 +84,9 @@ public class SubCommand {
      *
      * @return true iff the called has permission to execute this and all super commands.
      */
-    public boolean canExecute(Permissible caller) {
-        for (String permission : this.permissions) {
-            if (caller.hasPermission(permission) && (this.isBase() || this.superCommand.canExecute(caller)))
-                return true;
-        }
-        return false;
+    public boolean canBeExecutedBy(Permissible caller) {
+        return (this.isBase() || this.superCommand.canBeExecutedBy(caller))
+                && this.permissions.stream().anyMatch(caller::hasPermission);
     }
 
     public void addPermission(String permission) {
@@ -121,6 +132,27 @@ public class SubCommand {
         return this.superCommand == null;
     }
 
+    public boolean startsWith(SubCommand other) {
+        if (other.length > this.length)
+            return false;
+
+        // A length is always greater than 0
+        SubCommand self = this;
+        while (self.length > other.length)
+            self = self.superCommand;
+
+        // Both self and other have the same length, now we
+        // just need to check that the super chain is the same
+        while (self == other && self != null) {
+            self = self.superCommand;
+            other = other.superCommand;
+        }
+
+        // If self is null then we matched all the way to the end,
+        // otherwise we exited the loop early and the commands are different
+        return self == null;
+    }
+
     @Override
     public String toString() {
         String name = this.name;
@@ -149,14 +181,18 @@ public class SubCommand {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         SubCommand that = (SubCommand) o;
-        return Objects.equals(name, that.name) &&
+        return Objects.equals(allNames, that.allNames) &&
                 Objects.equals(superCommand, that.superCommand) &&
-                Objects.equals(permissions, that.permissions) &&
-                Objects.equals(aliases, that.aliases);
+                Objects.equals(permissions, that.permissions);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(name, superCommand, permissions, aliases);
+        return Objects.hash(allNames, superCommand, permissions);
+    }
+
+    @Override
+    public int compareTo(SubCommand that) {
+        return this.toExecutableString().compareToIgnoreCase(that.toExecutableString());
     }
 }

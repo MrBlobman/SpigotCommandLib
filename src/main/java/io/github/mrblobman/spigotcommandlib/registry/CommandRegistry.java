@@ -38,6 +38,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Predicate;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
 
@@ -489,7 +490,7 @@ public class CommandRegistry implements Listener {
             if (next == null) break; //We went as far as we could go
             else cmd = next;
         }
-        if (!cmd.canExecute(sender)) {
+        if (!cmd.canBeExecutedBy(sender)) {
             sender.sendMessage(ChatColor.RED + "You do not have permission to execute " + cmd.toString() + ".");
             return true;
         }
@@ -507,34 +508,32 @@ public class CommandRegistry implements Listener {
         return true;
     }
 
-    public void displayHelp(CommandSender sender, String[] cmdGiven) {
-        if (cmdGiven.length > 0) {
-            SubCommand subCommand = getSubCommand(cmdGiven);
-            if (subCommand == null) {
-                sender.sendMessage(ChatColor.YELLOW + "No commands match the query " + Arrays.toString(cmdGiven) + ".");
+    public void displayHelp(CommandSender sender, String[] partialCmdRaw) {
+        Predicate<SubCommand> filter;
+
+        if (partialCmdRaw.length > 0) {
+            SubCommand partialCmd = this.getSubCommand(partialCmdRaw);
+            if (partialCmd == null) {
+                sender.sendMessage(ChatColor.YELLOW + "No commands match the query " + Arrays.toString(partialCmdRaw) + ".");
                 return;
             }
-            String commandString = subCommand.toString();
-            AtomicBoolean sentSomething = new AtomicBoolean(false);
-            this.invokers.forEach((cmd, invoker) -> {
-                if (cmd.toString().startsWith(commandString) && cmd.canExecute(sender)) {
-                    invoker.sendDescription(cmd, sender);
-                    sentSomething.set(true);
-                }
-            });
-            if (!sentSomething.get())
-                sender.sendMessage(ChatColor.RED + "No commands you are allowed to execute match the query.");
+
+            filter = cmd -> cmd.startsWith(partialCmd) && cmd.canBeExecutedBy(sender);
         } else {
-            AtomicBoolean sentSomething = new AtomicBoolean(false);
-            this.invokers.forEach((cmd, invoker) -> {
-                if (cmd.canExecute(sender)) {
-                    invoker.sendDescription(cmd, sender);
-                    sentSomething.set(true);
-                }
-            });
-            if (!sentSomething.get())
-                sender.sendMessage(ChatColor.RED + "No commands you are allowed to execute match the query.");
+            filter = cmd -> cmd.canBeExecutedBy(sender);
         }
+
+        List<SubCommand> matching = this.invokers.keySet().stream()
+                .filter(filter)
+                .sorted()
+                .collect(Collectors.toList());
+
+        if (matching.isEmpty())
+            sender.sendMessage(ChatColor.RED + "No commands you are allowed to execute match the query.");
+        else
+            matching.forEach(cmd ->
+                    this.invokers.get(cmd)
+                            .sendDescription(cmd, sender));
     }
 
     private FragmentHandleInvoker[] intMapToArray(Map<Integer, FragmentHandleInvoker> map) {
