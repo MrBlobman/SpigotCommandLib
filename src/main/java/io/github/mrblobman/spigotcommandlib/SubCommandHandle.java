@@ -23,15 +23,13 @@
  */
 package io.github.mrblobman.spigotcommandlib;
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+import java.lang.annotation.*;
 
 /**
  * Marks the annotated method as a method that handles sub command executions.
  * All annotated methods should reside in a class that implements {@link SubCommandHandler}.
  */
+@Documented
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)
 public @interface SubCommandHandle {

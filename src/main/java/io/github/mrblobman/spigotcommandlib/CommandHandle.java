@@ -25,16 +25,14 @@ package io.github.mrblobman.spigotcommandlib;
 
 import io.github.mrblobman.spigotcommandlib.registry.CommandLib;
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+import java.lang.annotation.*;
 
 /**
  * Marks the annotated method as a method that should be registered as a
  * command. Methods marked with this method should belong to a class
  * implementing {@link CommandHandler}.
  */
+@Documented
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)
 public @interface CommandHandle {

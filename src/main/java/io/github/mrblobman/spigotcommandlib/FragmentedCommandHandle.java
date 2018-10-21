@@ -23,21 +23,18 @@
  */
 package io.github.mrblobman.spigotcommandlib;
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+import java.lang.annotation.*;
 
 /**
  * Marks this method as a fragment handler for a command that is executed in
  * multiple parts. These marked methods should belong to a class that
  * implements {@link FragmentedCommandHandler}
  */
+@Documented
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)
 public @interface FragmentedCommandHandle {
 
-    // TODO move this into the Handler and use an enum for the state
     /**
      * The state in which the user must be in to invoke this
      * command.
