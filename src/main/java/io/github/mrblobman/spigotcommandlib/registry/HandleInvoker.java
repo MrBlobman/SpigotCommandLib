@@ -27,7 +27,7 @@ import com.google.common.base.Defaults;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
-import io.github.mrblobman.spigotcommandlib.args.Argument;
+import io.github.mrblobman.spigotcommandlib.args.CommandParameter;
 import io.github.mrblobman.spigotcommandlib.args.ParseException;
 import net.md_5.bungee.api.ChatColor;
 import net.md_5.bungee.api.chat.*;
@@ -47,19 +47,19 @@ public class HandleInvoker implements Invoker {
     protected Object invocationTarget;
     protected Method method;
     protected Class<?> senderType;
-    protected Argument[] arguments;
+    protected List<CommandParameter<?>> commandParameters;
     protected int minArgsRequired;
 
-    HandleInvoker(SubCommand subCmd, String cmdDesc, Object invocationTarget, Method cmdHandler, Class<?> senderType, Argument[] arguments) {
+    HandleInvoker(SubCommand subCmd, String cmdDesc, Object invocationTarget, Method cmdHandler, Class<?> senderType, List<CommandParameter<?>> commandParameters) {
         this.subCommand = subCmd;
         this.cmdDesc = cmdDesc;
         this.invocationTarget = invocationTarget;
         this.method = cmdHandler;
         this.method.setAccessible(true);
         this.senderType = senderType;
-        this.arguments = arguments;
+        this.commandParameters = commandParameters;
         int minArgs = 0;
-        for (Argument arg : arguments) {
+        for (CommandParameter arg : commandParameters) {
             if (!arg.isOptional()) minArgs++;
         }
         this.minArgsRequired = minArgs;
@@ -99,44 +99,46 @@ public class HandleInvoker implements Invoker {
 
     protected List<Object> buildMethodParams(CommandSender sender, String[] args) {
         if (args.length < minArgsRequired) {
-            //Not enough args, send usage
+            // Not enough args, send usage
             sendUsage(sender);
             return null;
         }
         List<Object> params = new ArrayList<>();
-        //Parse all required
+        // Parse all required
         for (int i = 0; i < minArgsRequired; i++) {
-            if (arguments[i].getFormatter().canBeParsedFrom(args[i])) {
+            CommandParameter<?> cmdParam = this.commandParameters.get(i);
+            if (cmdParam.getFormatter().canBeParsedFrom(args[i])) {
                 try {
-                    params.add(arguments[i].getFormatter().parse(args[i]));
+                    params.add(cmdParam.getFormatter().parse(args[i]));
                 } catch (ParseException e) {
                     sender.sendMessage(ChatColor.RED + "Invalid argument value " + args[i] + ". " + e.getLocalizedMessage());
                     return null;
                 }
             } else {
-                //Invalid type param
+                // Invalid type param
                 sendUsage(sender);
                 return null;
             }
         }
-        //Parse all optional
+
+        // Parse all optional
         int argIndex;
-        for (argIndex = minArgsRequired; argIndex < arguments.length; argIndex++) {
-            Argument arg = arguments[argIndex];
-            if (arg.isVarArgs()) break;
+        for (argIndex = minArgsRequired; argIndex < commandParameters.size(); argIndex++) {
+            CommandParameter cmdParam = this.commandParameters.get(argIndex);
+            if (cmdParam.isVarArgs()) break;
             if (argIndex >= args.length) {
                 //Param was not given so we insert a null reference
-                if (arg.getArgumentType().isPrimitive()) {
+                if (cmdParam.getArgumentType().isPrimitive()) {
                     //We can't forward a null primitive, we need to set the default value
-                    params.add(Defaults.defaultValue(arg.getArgumentType()));
+                    params.add(Defaults.defaultValue(cmdParam.getArgumentType()));
                 } else {
                     params.add(null);
                 }
                 continue;
             }
-            if (arguments[argIndex].getFormatter().canBeParsedFrom(args[argIndex])) {
+            if (cmdParam.getFormatter().canBeParsedFrom(args[argIndex])) {
                 try {
-                    params.add(arguments[argIndex].getFormatter().parse(args[argIndex]));
+                    params.add(cmdParam.getFormatter().parse(args[argIndex]));
                 } catch (ParseException e) {
                     sender.sendMessage(ChatColor.RED + "Invalid argument value " + args[argIndex] + ". " + e.getLocalizedMessage());
                     return null;
@@ -148,9 +150,9 @@ public class HandleInvoker implements Invoker {
             }
         }
 
-        if (arguments.length > 0) {
-            //We need to handle the last one
-            Argument lastArg = arguments[arguments.length - 1];
+        if (commandParameters.size() > 0) {
+            // We need to handle the last one
+            CommandParameter lastArg = commandParameters.get(commandParameters.size() - 1);
             if (!lastArg.isVarArgs()) {
                 if (argIndex < args.length) {
                     //They gave too many args
@@ -183,7 +185,7 @@ public class HandleInvoker implements Invoker {
 
     protected void sendUsage(CommandSender sender) {
         StringBuilder strBuilder = new StringBuilder(this.subCommand.toExecutableString());
-        for (Argument arg : this.arguments) strBuilder.append(" ").append(arg.getDescriptiveName());
+        for (CommandParameter arg : this.commandParameters) strBuilder.append(" ").append(arg.getDescriptiveName());
         if (sender instanceof Player) {
             ComponentBuilder message = new ComponentBuilder(this.subCommand.toString());
             message.color(ChatColor.RED);
@@ -191,7 +193,7 @@ public class HandleInvoker implements Invoker {
             message.event(buildTooltip(ChatColor.YELLOW + this.subCommand.toString(),
                     ChatColor.GRAY + "Click to paste this command's",
                     ChatColor.GRAY + "format in your chat box."));
-            for (Argument<?> arg : this.arguments) {
+            for (CommandParameter<?> arg : this.commandParameters) {
                 message.append(" " + arg.getDescriptiveName());
                 message.event(buildTooltip(arg.getDescription()));
             }
@@ -206,7 +208,7 @@ public class HandleInvoker implements Invoker {
         if (!this.subCommand.equals(command)) return;
         sender.sendMessage(ChatColor.AQUA + this.cmdDesc);
         StringBuilder strBuilder = new StringBuilder(this.subCommand.toExecutableString());
-        for (Argument arg : this.arguments) strBuilder.append(" ").append(arg.getDescriptiveName());
+        for (CommandParameter arg : this.commandParameters) strBuilder.append(" ").append(arg.getDescriptiveName());
         if (sender instanceof Player) {
             ComponentBuilder message = new ComponentBuilder("    \u27A5" + this.subCommand.toString());
             message.color(ChatColor.RED);
@@ -214,7 +216,7 @@ public class HandleInvoker implements Invoker {
             message.event(buildTooltip(ChatColor.YELLOW + this.subCommand.toString(),
                     ChatColor.GRAY + "Click to paste this command's",
                     ChatColor.GRAY + "format in your chat box."));
-            for (Argument<?> arg : this.arguments) {
+            for (CommandParameter<?> arg : this.commandParameters) {
                 message.append(" " + arg.getDescriptiveName());
                 message.event(buildTooltip(arg.getDescription()));
             }

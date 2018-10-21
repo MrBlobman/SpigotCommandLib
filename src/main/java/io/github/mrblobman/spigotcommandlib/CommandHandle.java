@@ -23,6 +23,8 @@
  */
 package io.github.mrblobman.spigotcommandlib;
 
+import io.github.mrblobman.spigotcommandlib.registry.CommandLib;
+
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -53,7 +55,7 @@ public @interface CommandHandle {
      *
      * @return the String representation of the required permission
      */
-    String permission() default "";
+    String permission() default CommandLib.NO_PERMISSION;
 
     /**
      * A short description about what this command does.

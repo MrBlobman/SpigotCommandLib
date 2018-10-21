@@ -37,6 +37,7 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 public @interface FragmentedCommandHandle {
 
+    // TODO move this into the Handler and use an enum for the state
     /**
      * The state in which the user must be in to invoke this
      * command.

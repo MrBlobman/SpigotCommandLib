@@ -23,7 +23,7 @@
  */
 package io.github.mrblobman.spigotcommandlib.args;
 
-public enum ArgumentKind {
+public enum CommandParameterKind {
     REQUIRED(false, false, "<%s>"),
     OPTIONAL(true, false, "[%s]"),
     VAR_ARGS(true, true, "[%s]...");
@@ -32,7 +32,7 @@ public enum ArgumentKind {
     private final boolean varArgs;
     private final String argFormatString;
 
-    ArgumentKind(boolean optional, boolean varArgs, String argFormatString) {
+    CommandParameterKind(boolean optional, boolean varArgs, String argFormatString) {
         this.optional = optional;
         this.varArgs = varArgs;
         this.argFormatString = argFormatString;

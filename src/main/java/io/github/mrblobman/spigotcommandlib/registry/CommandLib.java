@@ -53,7 +53,7 @@ public class CommandLib {
      *
      * @see CommandHandle
      */
-    public void registerCommandHandler(CommandHandler handler) {
+    public void registerCommandHandler(CommandHandler handler) throws HandlerCompilationException {
         registry.register(handler);
     }
 
@@ -66,7 +66,7 @@ public class CommandLib {
      *
      * @see SubCommandHandle
      */
-    public void registerSubCommandHandler(SubCommandHandler handler, String[] cmdPrefix) {
+    public void registerSubCommandHandler(SubCommandHandler handler, String[] cmdPrefix) throws HandlerCompilationException {
         registry.register(handler, cmdPrefix);
     }
 
@@ -81,7 +81,7 @@ public class CommandLib {
      *
      * @see SubCommandHandle
      */
-    public void registerSubCommandHandler(SubCommandHandler handler, String permission, String[] cmdPrefix) {
+    public void registerSubCommandHandler(SubCommandHandler handler, String permission, String[] cmdPrefix) throws HandlerCompilationException {
         registry.register(handler, permission, cmdPrefix);
     }
 
@@ -98,7 +98,7 @@ public class CommandLib {
      *
      * @see FragmentedCommandHandle
      */
-    public <T extends FragmentExecutionContext> void registerFragmentedCommandHandler(FragmentedCommandHandler<T> handler, String permission, long timeout, FragmentedCommandContextSupplier<T> supplier, String... cmdPrefix) {
+    public <T extends FragmentExecutionContext> void registerFragmentedCommandHandler(FragmentedCommandHandler<T> handler, String permission, long timeout, FragmentedCommandContextSupplier<T> supplier, String... cmdPrefix) throws HandlerCompilationException {
         registry.register(handler, permission, timeout, supplier, cmdPrefix);
     }
 
@@ -114,7 +114,7 @@ public class CommandLib {
      *
      * @see FragmentedCommandHandle
      */
-    public void registerFragmentedCommandHandler(FragmentedCommandHandler<FragmentExecutionContext> handler, String permission, long timeout, String... cmdPrefix) {
+    public void registerFragmentedCommandHandler(FragmentedCommandHandler<FragmentExecutionContext> handler, String permission, long timeout, String... cmdPrefix) throws HandlerCompilationException {
         registry.register(handler, permission, timeout, FragmentExecutionContext::new, cmdPrefix);
     }
 

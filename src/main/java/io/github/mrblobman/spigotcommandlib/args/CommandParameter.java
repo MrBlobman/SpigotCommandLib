@@ -30,15 +30,15 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class Argument<T> {
-    private final ArgumentKind kind;
+public class CommandParameter<T> {
+    private final CommandParameterKind kind;
     private final ArgumentFormatter<T> formatter;
     private final Class type;
 
     private final String name;
     private final List<String> desc;
 
-    public Argument(ArgumentKind kind, ArgumentFormatter<T> formatter, Class argClass, String name, List<String> desc) {
+    public CommandParameter(CommandParameterKind kind, ArgumentFormatter<T> formatter, Class argClass, String name, List<String> desc) {
         this.kind = kind;
         this.formatter = formatter;
         this.type = argClass;
@@ -57,7 +57,7 @@ public class Argument<T> {
         }
     }
 
-    public Argument(ArgumentKind kind, ArgumentFormatter<T> formatter, Class argClass, String name) {
+    public CommandParameter(CommandParameterKind kind, ArgumentFormatter<T> formatter, Class argClass, String name) {
         this(kind, formatter, argClass, name, null);
     }
 
@@ -81,21 +81,21 @@ public class Argument<T> {
     }
 
     /**
-     * Get a description of the use of the argument. This
+     * Get a description of the use of the parameter. This
      * explains the value for the argument.
      *
-     * @return the description of the argument.
+     * @return the description of the parameter.
      */
     public List<String> getDescription() {
         return this.desc;
     }
 
     /**
-     * Get the {@link ArgumentFormatter} for this argument. It can
-     * be used to check if an argument value can be parsed for this
-     * argument as well as actually doing the parsing.
+     * Get the {@link ArgumentFormatter} for this parameter. It can
+     * be used to check if an argument can be parsed for this
+     * parameter as well as actually doing the parsing.
      *
-     * @return the argument formatter for this argument.
+     * @return the argument formatter for this parameter.
      */
     public ArgumentFormatter<T> getFormatter() {
         return this.formatter;
@@ -111,31 +111,31 @@ public class Argument<T> {
     }
 
     /**
-     * Check if this argument is an argument of varying length.
+     * Check if this parameter is an argument of varying length.
      *
-     * @return true iff this argument is of varying length, false otherwise.
+     * @return true iff this parameter is of varying length, false otherwise.
      */
     public boolean isVarArgs() {
         return this.kind.isVarArgs();
     }
 
     /**
-     * Check if this argument is optional or not.
+     * Check if this parameter is optional or not.
      * if {@link #isVarArgs()} returns true, isOptional() will also return true
      *
-     * @return true iff this argument is optional, false otherwise.
+     * @return true iff this parameter is optional, false otherwise.
      */
     public boolean isOptional() {
         return this.kind.isOptional();
     }
 
-    public ArgumentKind getKind() {
+    public CommandParameterKind getKind() {
         return this.kind;
     }
 
     @Override
     public String toString() {
-        return "Argument{" +
+        return "CommandParameter{" +
                 "formatter=" + this.formatter +
                 ", name='" + this.name + '\'' +
                 ", desc=" + this.desc +

@@ -32,22 +32,40 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Listener;
 
-import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Predicate;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
 
 public class CommandRegistry implements Listener {
-    private Map<String, SubCommand> baseCommands = new HashMap<>();
-    private Map<SubCommand, Invoker> invokers = new HashMap<>();
-    private BundleCleaner bundleCleaner;
-    private CommandMap bukkitCommandMap;
-    private CommandLib lib;
+    private static final String[] EMPTY_STR_ARRAY = new String[0];
+
+    private static final int CTX_INSENSITIVE_SENDER_PARAM_IDX = 0;
+
+    private static final int CTX_SENSITIVE_CONTEXT_PARAM_IDX = 0;
+    private static final int CTX_SENSITIVE_SENDER_PARAM_IDX = 1;
+
+    private static final BitSet CTX_INSENSITIVE_IMPLICIT_PARAMS_IDX = new BitSet();
+
+    static {
+        CTX_INSENSITIVE_IMPLICIT_PARAMS_IDX.set(CTX_INSENSITIVE_SENDER_PARAM_IDX);
+    }
+
+    private static final BitSet CTX_SENSITIVE_IMPLICIT_PARAMS_IDX = new BitSet();
+
+    static {
+        CTX_SENSITIVE_IMPLICIT_PARAMS_IDX.set(CTX_SENSITIVE_CONTEXT_PARAM_IDX);
+        CTX_SENSITIVE_IMPLICIT_PARAMS_IDX.set(CTX_SENSITIVE_SENDER_PARAM_IDX);
+    }
+
+    private final Map<String, SubCommand> baseCommands = new HashMap<>();
+    private final Map<SubCommand, Invoker> invokers = new HashMap<>();
+    private final BundleCleaner bundleCleaner;
+    private final CommandMap bukkitCommandMap;
+    private final CommandLib lib;
 
     CommandRegistry(CommandLib lib) throws InstantiationException {
         Method commandMap;
@@ -62,7 +80,7 @@ public class CommandRegistry implements Listener {
         } catch (InvocationTargetException | IllegalAccessException | IllegalArgumentException e) {
             throw new InstantiationException("Could not grab the command map from the bukkit server. " + e.getLocalizedMessage());
         }
-        if (rawMap == null || !(rawMap instanceof CommandMap)) {
+        if (!(rawMap instanceof CommandMap)) {
             throw new InstantiationException("Could not grab the command map from the bukkit server.");
         }
         this.bundleCleaner = new BundleCleaner(lib.getHook());
@@ -70,59 +88,40 @@ public class CommandRegistry implements Listener {
         this.lib = lib;
     }
 
-    public void register(CommandHandler commandHandler) {
+    public void register(CommandHandler commandHandler) throws HandlerCompilationException {
         for (Method method : commandHandler.getClass().getDeclaredMethods()) {
             CommandHandle handlerAnnotation = method.getAnnotation(CommandHandle.class);
             //Move on, this method isn't annotated
             if (handlerAnnotation == null) continue;
-            //Check that min requirements are met
-            if (method.getParameterCount() < 1) {
-                lib.getHook().getLogger().log(Level.WARNING, "Cannot register method " + method.getName() + ". Not enough parameters. Requires first param as sender.");
-                continue;
-            }
-            if (!registerSingleMethod(method, commandHandler,
-                    handlerAnnotation.command(),
-                    handlerAnnotation.permission(),
-                    ChatColor.translateAlternateColorCodes('&', handlerAnnotation.description())))
-                continue;
+
+            String[] command = buildCommand(EMPTY_STR_ARRAY, handlerAnnotation.command(), method.getName());
+            registerSingleMethod(method, commandHandler, command, handlerAnnotation.permission(),
+                    ChatColor.translateAlternateColorCodes('&', handlerAnnotation.description()));
+
             lib.getHook().getLogger().log(Level.INFO, "Successfully registered " + method.getName() + " in " + commandHandler.getClass().getSimpleName() + " for /" + Arrays.toString(handlerAnnotation.command()).replaceAll("[,\\[\\]]", ""));
         }
     }
 
-    public void register(SubCommandHandler commandHandler, String... subCommandPrefix) {
-        register(commandHandler, "", subCommandPrefix);
+    public void register(SubCommandHandler commandHandler, String... subCommandPrefix) throws HandlerCompilationException {
+        register(commandHandler, CommandLib.NO_PERMISSION, subCommandPrefix);
     }
 
-    public void register(SubCommandHandler commandHandler, String permission, String... subCommandPrefix) {
+    public void register(SubCommandHandler commandHandler, String permission, String... subCommandPrefix) throws HandlerCompilationException {
         for (Method method : commandHandler.getClass().getDeclaredMethods()) {
             SubCommandHandle handlerAnnotation = method.getAnnotation(SubCommandHandle.class);
             //Move on, this method isn't annotated
             if (handlerAnnotation == null) continue;
-            //Check that min requirements are met
-            if (method.getParameterCount() < 1) {
-                lib.getHook().getLogger().log(Level.WARNING, "Cannot register method " + method.getName() + ". Not enough parameters. Requires first param as sender.");
-                continue;
-            }
-            String[] command;
-            if (handlerAnnotation.command().length > 0) {
-                command = Arrays.copyOf(subCommandPrefix, subCommandPrefix.length + handlerAnnotation.command().length);
-                for (int i = 0; i < handlerAnnotation.command().length; i++)
-                    command[subCommandPrefix.length + i] = handlerAnnotation.command()[i];
-            } else {
-                command = Arrays.copyOf(subCommandPrefix, subCommandPrefix.length + 1);
-                command[subCommandPrefix.length] = method.getName();
-            }
-            if (!registerSingleMethod(method, commandHandler,
-                    command,
-                    handlerAnnotation.permission().isEmpty() ? permission : handlerAnnotation.permission(),
-                    ChatColor.translateAlternateColorCodes('&', handlerAnnotation.description())))
-                continue;
+
+            String[] command = buildCommand(subCommandPrefix, handlerAnnotation.command(), method.getName());
+            registerSingleMethod(method, commandHandler, command, handlerAnnotation.permission().isEmpty() ? permission : handlerAnnotation.permission(),
+                    ChatColor.translateAlternateColorCodes('&', handlerAnnotation.description()));
+
             lib.getHook().getLogger().log(Level.INFO, "Successfully registered " + method.getName() + " in " + commandHandler.getClass().getSimpleName() + " for /" + Arrays.toString(command).replaceAll("[,\\[\\]]", ""));
         }
     }
 
-    public <T extends FragmentExecutionContext> void register(FragmentedCommandHandler<T> commandHandler, String permission, long timeout, FragmentedCommandContextSupplier<T> supplier, String... subCommandPrefix) {
-        Class<?> contextClass = supplier.get().getClass(); //A small hack to get the generic type of the handler.
+    public <T extends FragmentExecutionContext> void register(FragmentedCommandHandler<T> commandHandler, String permission, long timeout, FragmentedCommandContextSupplier<T> supplier, String... subCommandPrefix) throws HandlerCompilationException {
+        Class<?> contextClass = supplier.get().getClass(); // A small hack to get the generic type of the handler.
         FragmentBundle<T> bundle = timeout <= 0 ? new FragmentBundle<>(commandHandler, supplier) : new FragmentBundle<>(commandHandler, timeout, supplier);
         bundleCleaner.addBundle(bundle);
 
@@ -132,25 +131,13 @@ public class CommandRegistry implements Listener {
             FragmentedCommandHandle handlerAnnotation = method.getAnnotation(FragmentedCommandHandle.class);
             //Move on, this method isn't annotated
             if (handlerAnnotation == null) continue;
-            //Check that min requirements are met
-            if (method.getParameterCount() < 2) {
-                lib.getHook().getLogger().log(Level.WARNING, "Cannot register method " + method.getName() + ". Not enough parameters. Requires first param as context and second as sender.");
-                continue;
-            }
-            String[] command;
-            if (handlerAnnotation.command().length > 0) {
-                command = Arrays.copyOf(subCommandPrefix, subCommandPrefix.length + handlerAnnotation.command().length);
-                for (int i = 0; i < handlerAnnotation.command().length; i++)
-                    command[subCommandPrefix.length + i] = handlerAnnotation.command()[i];
-            } else {
-                command = Arrays.copyOf(subCommandPrefix, subCommandPrefix.length + 1);
-                command[subCommandPrefix.length] = method.getName();
-            }
 
-            FragmentHandleInvoker invoker = buildFragmentInvoker(method, commandHandler, contextClass, command, handlerAnnotation.permission().isEmpty() ? permission : handlerAnnotation.permission(), ChatColor.translateAlternateColorCodes('&', handlerAnnotation.description()));
-            if (invoker == null) continue;
+            String[] command = buildCommand(subCommandPrefix, handlerAnnotation.command(), method.getName());
 
-            //Handle state information
+            FragmentHandleInvoker invoker = buildFragmentInvoker(method, commandHandler, contextClass, command, handlerAnnotation.permission().isEmpty() ? permission : handlerAnnotation.permission(),
+                    ChatColor.translateAlternateColorCodes('&', handlerAnnotation.description()));
+
+            // Handle state information
             SubCommand cmd = invoker.getSubCommand();
             Map<Integer, FragmentHandleInvoker> invokersForSub = invokers.get(cmd);
             if (invokersForSub == null) {
@@ -172,198 +159,113 @@ public class CommandRegistry implements Listener {
         }
     }
 
-    private FragmentHandleInvoker buildFragmentInvoker(Method method, FragmentedCommandHandler commandHandler, Class<?> contextType, String[] command, String permission, String description) {
-        Parameter[] methodParams = method.getParameters();
-        //JDK7 annotation workaround
-        ArgDescription[] paramArgDesc = getArgDescs(method);
-        if (paramArgDesc[0] != null || paramArgDesc[1] != null) {
-            lib.getHook().getLogger().log(Level.WARNING, "Cannot register method " + method.getName() + ". FragmentContext and sender param cannot be annotated as an argument.");
-        }
-        //Check that optional args are not followed by varArgs or required args
-        if (!isArgFlowValid(paramArgDesc, method.isVarArgs())) {
-            lib.getHook().getLogger().log(Level.WARNING, "Cannot register method " + method.getName() + ". Illegal argument flow. Optional arguments cannot be followed by required arguments.");
-            return null;
-        }
+    private FragmentHandleInvoker buildFragmentInvoker(Method method, FragmentedCommandHandler commandHandler, Class<?> contextType, String[] command, String permission, String description) throws HandlerCompilationException {
+        MethodDescriptor methodDesc = MethodDescriptor.fromMethod(method);
 
-        //Build parsing data arrays
-        Argument<?>[] arguments = new Argument[methodParams.length - 2];
-        for (int i = 2; i < methodParams.length - (method.isVarArgs() ? 1 : 0); i++) {
-            Class<?> paramType = methodParams[i].getType();
-            ArgumentFormatter<?> formatter = FormatterMapping.lookup(paramType);
-            if (formatter == null) {
-                lib.getHook().getLogger().log(Level.WARNING, "Cannot register method " + method.getName() + ". Unknown parameter parse type (" + paramType.getName() + "). Accepted types are String, Integer, Long, Short, Double, Float and org.bukkit.Color.");
-                return null;
-            }
-            ArgDescription desc = paramArgDesc[i];
-            ArgumentKind kind = desc != null && desc.optional() ? ArgumentKind.OPTIONAL : ArgumentKind.REQUIRED;
-            String name;
-            if (desc != null && !desc.name().equals("")) {
-                name = desc.name();
-            } else {
-                name = methodParams[i].isNamePresent() ? methodParams[i].getName() : "arg" + (i - 2);
-            }
-            if (desc != null && desc.description().length != 0) {
-                arguments[i - 2] = new Argument<>(kind, formatter, paramType, name, Arrays.asList(desc.description()));
-            } else {
-                arguments[i - 2] = new Argument<>(kind, formatter, paramType, name);
-            }
-        }
-        if (method.isVarArgs()) {
-            int lastIndex = methodParams.length - 1;
-            //We need to handle the last arg differently because it is a var arg
-            Class<?> paramType = methodParams[lastIndex].getType();
-            ArgumentFormatter<?> formatter = FormatterMapping.lookpArray(paramType);
-            if (formatter == null) {
-                lib.getHook().getLogger().log(Level.WARNING, "Cannot register method " + method.getName() + ". Unknown parameter parse type (" + paramType.getName() + "). Accepted types are String, Integer, Long, Short, Double, Float and org.bukkit.Color.");
-                return null;
-            }
-            //JDK8+ Uses Parameter ArgDescription desc = methodParams[lastIndex].getAnnotation(ArgDescription.class);
-            ArgDescription desc = paramArgDesc[lastIndex];
-            String name;
-            if (desc != null && !desc.name().equals("")) {
-                name = desc.name();
-            } else {
-                name = methodParams[lastIndex].isNamePresent() ? methodParams[lastIndex].getName() : "arg" + (lastIndex);
-            }
-            if (desc != null && desc.description().length != 0) {
-                arguments[lastIndex - 2] = new Argument<>(ArgumentKind.VAR_ARGS, formatter, paramType, name, Arrays.asList(desc.description()));
-            } else {
-                arguments[lastIndex - 2] = new Argument<>(ArgumentKind.VAR_ARGS, formatter, paramType, name);
-            }
-        }
-        //Verify the context type
-        Class<?> contextMethodParamType = methodParams[0].getType();
-        if (!contextType.isAssignableFrom(contextMethodParamType)) {
-            lib.getHook().getLogger().log(Level.WARNING, "Cannot register method " + method.getName() + ". The first parameter must be the same type as the generic type of the class.");
-            return null;
-        }
+        List<CommandParameter<?>> cmdParams = this.compileParams(methodDesc, CTX_SENSITIVE_IMPLICIT_PARAMS_IDX);
+        Parameter ctxParam = checkImplicitParam(methodDesc, "context", CTX_SENSITIVE_CONTEXT_PARAM_IDX, contextType);
+        Parameter senderParam = checkImplicitParam(methodDesc, "sender", CTX_SENSITIVE_SENDER_PARAM_IDX, Player.class);
 
-        //Verify the sender type is valid
-        Class<?> senderType = methodParams[1].getType();
-        if (!Player.class.isAssignableFrom(senderType)) {
-            lib.getHook().getLogger().log(Level.WARNING, "Cannot register method " + method.getName() + ". Invalid sender type " + senderType.getSimpleName() + ". Must be accessible from org.bukkit.Player.");
-            return null;
-        }
+        SubCommand cmd = this.addSubCommand(command, permission);
+        if (cmd == null)
+            throw new HandlerCompilationException(methodDesc, "Invalid sub command %s.", Arrays.toString(command));
 
-        //Register the sub command
-        SubCommand cmd = addSubCommand(command, permission);
-        if (cmd == null) {
-            lib.getHook().getLogger().log(Level.WARNING, "Cannot register method " + method.getName() + ". Invalid sub command.");
-            return null;
-        }
-        //Finally create the invoker
-        return new FragmentHandleInvoker(cmd, description, commandHandler, method, senderType, arguments);
+        return new FragmentHandleInvoker(cmd, description, commandHandler, method, senderParam.getType(), cmdParams);
     }
 
-    private boolean registerSingleMethod(Method method, Object commandHandler, String[] command, String permission, String description) {
-        Parameter[] methodParams = method.getParameters();
-        //JDK7 annotation workaround
-        ArgDescription[] paramArgDesc = getArgDescs(method);
-        if (paramArgDesc[0] != null) {
-            lib.getHook().getLogger().log(Level.WARNING, "Cannot register method " + method.getName() + ". Sender param cannot be annotated as an argument.");
-        }
-        //Check that optional args are not followed by varArgs or required args
-        if (!isArgFlowValid(paramArgDesc, method.isVarArgs())) {
-            lib.getHook().getLogger().log(Level.WARNING, "Cannot register method " + method.getName() + ". Illegal argument flow. Optional arguments cannot be followed by required arguments.");
-            return false;
-        }
+    private void registerSingleMethod(Method method, Object commandHandler, String[] command, String permission, String description) throws HandlerCompilationException {
+        MethodDescriptor methodDesc = MethodDescriptor.fromMethod(method);
 
-        //Build parsing data arrays
-        Argument<?>[] arguments = new Argument[methodParams.length - 1];
-        for (int i = 1; i < methodParams.length - (method.isVarArgs() ? 1 : 0); i++) {
-            Class<?> paramType = methodParams[i].getType();
-            ArgumentFormatter<?> formatter = FormatterMapping.lookup(paramType);
-            if (formatter == null) {
-                lib.getHook().getLogger().log(Level.WARNING, "Cannot register method " + method.getName() + ". Unknown parameter parse type (" + paramType.getName() + "). Accepted types are String, Integer, Long, Short, Double, Float and org.bukkit.Color.");
-                return false;
-            }
-            ArgDescription desc = paramArgDesc[i];
-            ArgumentKind kind = desc != null && desc.optional() ? ArgumentKind.OPTIONAL : ArgumentKind.REQUIRED;
-            String name;
-            if (desc != null && !desc.name().equals("")) {
-                name = desc.name();
-            } else {
-                name = methodParams[i].isNamePresent() ? methodParams[i].getName() : "arg" + (i - 1);
-            }
-            if (desc != null && desc.description().length != 0) {
-                arguments[i - 1] = new Argument<>(kind, formatter, paramType, name, Arrays.asList(desc.description()));
-            } else {
-                arguments[i - 1] = new Argument<>(kind, formatter, paramType, name);
-            }
-        }
-        if (method.isVarArgs()) {
-            int lastIndex = methodParams.length - 1;
-            //We need to handle the last arg differently because it is a var arg
-            Class<?> paramType = methodParams[lastIndex].getType();
-            ArgumentFormatter<?> formatter = FormatterMapping.lookpArray(paramType);
-            if (formatter == null) {
-                lib.getHook().getLogger().log(Level.WARNING, "Cannot register method " + method.getName() + ". Unknown parameter parse type (" + paramType.getName() + "). Accepted types are String, Integer, Long, Short, Double, Float and org.bukkit.Color.");
-                return false;
-            }
-            //JDK8+ Uses Parameter ArgDescription desc = methodParams[lastIndex].getAnnotation(ArgDescription.class);
-            ArgDescription desc = paramArgDesc[lastIndex];
-            String name;
-            if (desc != null && !desc.name().equals("")) {
-                name = desc.name();
-            } else {
-                name = methodParams[lastIndex].isNamePresent() ? methodParams[lastIndex].getName() : "arg" + (lastIndex);
-            }
-            if (desc != null && desc.description().length != 0) {
-                arguments[lastIndex - 1] = new Argument<>(ArgumentKind.VAR_ARGS, formatter, paramType, name, Arrays.asList(desc.description()));
-            } else {
-                arguments[lastIndex - 1] = new Argument<>(ArgumentKind.VAR_ARGS, formatter, paramType, name);
-            }
-        }
-        //Verify the sender type is valid
-        Class<?> senderType = methodParams[0].getType();
-        if (!CommandSender.class.isAssignableFrom(senderType)) {
-            lib.getHook().getLogger().log(Level.WARNING, "Cannot register method " + method.getName() + ". Invalid sender type " + senderType.getSimpleName() + ". Must be accessible from org.bukkit.CommandSender.");
-            return false;
-        }
-        //Register the sub command
-        SubCommand cmd = addSubCommand(command, permission);
-        if (cmd == null) {
-            lib.getHook().getLogger().log(Level.WARNING, "Cannot register method " + method.getName() + ". Invalid sub command.");
-            return false;
-        }
-        //Finally create the invoker
-        this.invokers.put(cmd, new HandleInvoker(cmd, description, commandHandler, method, senderType, arguments));
-        return true;
+        List<CommandParameter<?>> cmdParams = this.compileParams(methodDesc, CTX_INSENSITIVE_IMPLICIT_PARAMS_IDX);
+        Parameter senderParam = checkImplicitParam(methodDesc, "sender", CTX_INSENSITIVE_SENDER_PARAM_IDX, CommandSender.class);
+
+        SubCommand cmd = this.addSubCommand(command, permission);
+        if (cmd == null)
+            throw new HandlerCompilationException(methodDesc, "Invalid sub command %s.", Arrays.toString(command));
+
+        this.invokers.put(cmd, new HandleInvoker(cmd, description, commandHandler, method, senderParam.getType(), cmdParams));
     }
 
-    private ArgDescription[] getArgDescs(Method method) {
-        Annotation[][] annotations = method.getParameterAnnotations();
-        ArgDescription[] argDesc = new ArgDescription[annotations.length];
-        int index = 0;
-        for (Annotation[] paramAnnotations : annotations) {
-            for (Annotation annotation : paramAnnotations) {
-                if (annotation.annotationType().equals(ArgDescription.class)) {
-                    argDesc[index] = (ArgDescription) annotation;
-                    break;
-                }
-            }
-            index++;
-        }
-        return argDesc;
+    private String[] buildCommand(String[] prefix, String[] cmd, String fallback) {
+        if (cmd == null || cmd.length == 0)
+            cmd = new String[]{ fallback };
+
+        if (prefix.length == 0)
+            return cmd;
+
+        String[] concat = Arrays.copyOf(prefix, prefix.length + cmd.length);
+        System.arraycopy(cmd, 0, concat, prefix.length, cmd.length);
+        return concat;
     }
 
-    private boolean isArgFlowValid(ArgDescription[] paramArgDesc, boolean isVarargs) {
-        boolean canBeRequired = true;
-        for (int i = 0; i < paramArgDesc.length - (isVarargs ? 1 : 0); i++) {
-            if (paramArgDesc[i] != null) {
-                if (paramArgDesc[i].optional()) {
-                    //We hit an optional arg so there can no long be any req args
-                    canBeRequired = false;
-                } else if (!canBeRequired) {
-                    //We found a required arg but they are not allowed
-                    return false;
-                }
-            } else if (!canBeRequired) {
-                //We found a required arg but they are not allowed
-                return false;
-            }
+    private Parameter checkImplicitParam(MethodDescriptor method, String name, int idx, Class<?> assignableTo) throws HandlerCompilationException {
+        Parameter param = method.getParameter(idx);
+        if (param == null)
+            throw new HandlerCompilationException(method, "Missing required implicit parameter %s in position %d.", name, idx);
+
+        if (!assignableTo.isAssignableFrom(param.getType()))
+            throw new HandlerCompilationException(method, "Invalid %s type %s. Must be assignable to %s.", name, param.getType().getSimpleName(), assignableTo.getName());
+
+        return param;
+    }
+
+
+    private void checkArgFlow(MethodDescriptor method, List<CommandParameter<?>> args) throws HandlerCompilationException {
+        CommandParameter<?> lastOptional = null;
+
+        for (CommandParameter<?> arg : args) {
+            if (arg.isOptional())
+                lastOptional = arg;
+            else if (lastOptional != null)
+                throw new HandlerCompilationException(method, "Required argument %s cannot follow an optional argument (%s).", arg.getName(), lastOptional.getName());
         }
-        return true;
+    }
+
+    private List<CommandParameter<?>> compileParams(MethodDescriptor method, BitSet skip) throws HandlerCompilationException {
+        List<Parameter> params = method.getParameters();
+
+        List<CommandParameter<?>> args = new ArrayList<>(params.size() - skip.cardinality());
+        int argIdx = -1;
+        for (int i = 0; i < params.size(); i++) {
+            if (skip.get(i))
+                continue;
+            argIdx++;
+
+            Parameter p = params.get(i);
+
+            ArgDescription argDesc = p.getAnnotation(ArgDescription.class);
+
+            CommandParameterKind kind = p.isVarArgs()
+                    ? CommandParameterKind.VAR_ARGS
+                    : argDesc != null && argDesc.optional()
+                            ? CommandParameterKind.OPTIONAL
+                            : CommandParameterKind.REQUIRED;
+
+            ArgumentFormatter<?> formatter = p.isVarArgs()
+                    ? FormatterMapping.lookpArray(p.getType())
+                    : FormatterMapping.lookup(p.getType());
+
+            String name = argDesc != null && !argDesc.name().isEmpty()
+                    ? argDesc.name()
+                    : p.isNamePresent()
+                            ? p.getName()
+                            : String.format("arg%d", argIdx);
+
+            List<String> desc = argDesc != null && argDesc.description().length != 0
+                    ? Arrays.asList(argDesc.description())
+                    : null;
+
+            if (formatter == null)
+                throw new HandlerCompilationException(method, "Unknown argument type %s for parameter %s.", p.getType().getSimpleName(), name);
+
+            CommandParameter<?> arg = new CommandParameter<>(kind, formatter, p.getType(), name, desc);
+
+            args.add(arg);
+        }
+
+        checkArgFlow(method, args);
+
+        return args;
     }
 
     protected SubCommand getSubCommand(String[] command) {

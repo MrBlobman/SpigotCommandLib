@@ -24,7 +24,7 @@
 package io.github.mrblobman.spigotcommandlib.registry;
 
 import io.github.mrblobman.spigotcommandlib.FragmentExecutionContext;
-import io.github.mrblobman.spigotcommandlib.args.Argument;
+import io.github.mrblobman.spigotcommandlib.args.CommandParameter;
 import org.bukkit.command.CommandSender;
 
 import java.lang.reflect.Method;
@@ -32,8 +32,8 @@ import java.util.List;
 
 public class FragmentHandleInvoker extends HandleInvoker {
 
-    FragmentHandleInvoker(SubCommand subCmd, String cmdDesc, Object invocationTarget, Method cmdHandler, Class<?> senderType, Argument[] arguments) {
-        super(subCmd, cmdDesc, invocationTarget, cmdHandler, senderType, arguments);
+    FragmentHandleInvoker(SubCommand subCmd, String cmdDesc, Object invocationTarget, Method cmdHandler, Class<?> senderType, List<CommandParameter<?>> commandParameters) {
+        super(subCmd, cmdDesc, invocationTarget, cmdHandler, senderType, commandParameters);
     }
 
     /**
