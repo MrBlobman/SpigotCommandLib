@@ -24,8 +24,11 @@ license {
 }
 build.dependsOn 'licenseFormat'
 
-sourceCompatibility = '1.8'
-targetCompatibility = '1.8'
+tasks.withType(JavaCompile) {
+    sourceCompatibility = '1.8'
+    targetCompatibility = '1.8'
+    options.compilerArgs << '-parameters'
+}
 
 repositories {
     //Spigot

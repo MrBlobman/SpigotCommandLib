@@ -51,7 +51,7 @@ public class ArgumentFormatter<T> {
                 }
             },
             "Boolean",
-            "A true of false value.",
+            "A true or false value.",
             "Ex: true, false, yes, no");
 
     public static final ArgumentFormatter<Integer> INTEGER = new ArgumentFormatter<>(

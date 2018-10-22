@@ -25,6 +25,9 @@ package io.github.mrblobman.spigotcommandlib.registry;
 
 import io.github.mrblobman.spigotcommandlib.*;
 import io.github.mrblobman.spigotcommandlib.args.*;
+import io.github.mrblobman.spigotcommandlib.context.SimpleContextProvider;
+import io.github.mrblobman.spigotcommandlib.invocation.CommandMethodHandle;
+import io.github.mrblobman.spigotcommandlib.util.ChatUtils;
 import net.md_5.bungee.api.ChatColor;
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandMap;
@@ -32,6 +35,8 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Listener;
 
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
@@ -39,6 +44,7 @@ import java.util.*;
 import java.util.function.Predicate;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class CommandRegistry implements Listener {
     private static final String[] EMPTY_STR_ARRAY = new String[0];
@@ -62,7 +68,7 @@ public class CommandRegistry implements Listener {
     }
 
     private final Map<String, SubCommand> baseCommands = new HashMap<>();
-    private final Map<SubCommand, Invoker> invokers = new HashMap<>();
+    private final Map<SubCommand, CommandExecutor> executors = new HashMap<>();
     private final BundleCleaner bundleCleaner;
     private final CommandMap bukkitCommandMap;
     private final CommandLib lib;
@@ -95,8 +101,10 @@ public class CommandRegistry implements Listener {
             if (handlerAnnotation == null) continue;
 
             String[] command = buildCommand(EMPTY_STR_ARRAY, handlerAnnotation.command(), method.getName());
-            registerSingleMethod(method, commandHandler, command, handlerAnnotation.permission(),
-                    ChatColor.translateAlternateColorCodes('&', handlerAnnotation.description()));
+            CommandExecutor executor = buildContextInsensitiveCommand(method, commandHandler, command, handlerAnnotation.permission(),
+                    ChatUtils.splitAndColorLines(handlerAnnotation.description()));
+
+            this.executors.put(executor.getTrigger(), executor);
 
             lib.getHook().getLogger().log(Level.INFO, "Successfully registered " + method.getName() + " in " + commandHandler.getClass().getSimpleName() + " for /" + Arrays.toString(handlerAnnotation.command()).replaceAll("[,\\[\\]]", ""));
         }
@@ -113,56 +121,55 @@ public class CommandRegistry implements Listener {
             if (handlerAnnotation == null) continue;
 
             String[] command = buildCommand(subCommandPrefix, handlerAnnotation.command(), method.getName());
-            registerSingleMethod(method, commandHandler, command, handlerAnnotation.permission().isEmpty() ? permission : handlerAnnotation.permission(),
-                    ChatColor.translateAlternateColorCodes('&', handlerAnnotation.description()));
+            CommandExecutor executor = buildContextInsensitiveCommand(method, commandHandler, command, handlerAnnotation.permission().isEmpty() ? permission : handlerAnnotation.permission(),
+                    ChatUtils.splitAndColorLines(handlerAnnotation.description()));
+
+            this.executors.put(executor.getTrigger(), executor);
 
             lib.getHook().getLogger().log(Level.INFO, "Successfully registered " + method.getName() + " in " + commandHandler.getClass().getSimpleName() + " for /" + Arrays.toString(command).replaceAll("[,\\[\\]]", ""));
         }
     }
 
     public <T extends FragmentExecutionContext> void register(FragmentedCommandHandler<T> commandHandler, String permission, long timeout, FragmentedCommandContextSupplier<T> supplier, String... subCommandPrefix) throws HandlerCompilationException {
-        Class<?> contextClass = supplier.get().getClass(); // A small hack to get the generic type of the handler.
-        FragmentBundle<T> bundle = timeout <= 0 ? new FragmentBundle<>(commandHandler, supplier) : new FragmentBundle<>(commandHandler, timeout, supplier);
-        bundleCleaner.addBundle(bundle);
-
-        Map<SubCommand, Map<Integer, FragmentHandleInvoker>> invokers = new HashMap<>();
+        Class<?> contextType = supplier.get().getClass(); // A small hack to get the generic type of the handler.
+        Map<SubCommand, Map<Integer, CommandMethodHandle>> commandHandles = new HashMap<>();
 
         for (Method method : commandHandler.getClass().getDeclaredMethods()) {
             FragmentedCommandHandle handlerAnnotation = method.getAnnotation(FragmentedCommandHandle.class);
-            //Move on, this method isn't annotated
+            // Move on, this method isn't annotated
             if (handlerAnnotation == null) continue;
 
             String[] command = buildCommand(subCommandPrefix, handlerAnnotation.command(), method.getName());
 
-            FragmentHandleInvoker invoker = buildFragmentInvoker(method, commandHandler, contextClass, command, handlerAnnotation.permission().isEmpty() ? permission : handlerAnnotation.permission(),
-                    ChatColor.translateAlternateColorCodes('&', handlerAnnotation.description()));
+            CommandMethodHandle handle = buildFragmentHandle(method, commandHandler, contextType, command, handlerAnnotation.permission().isEmpty() ? permission : handlerAnnotation.permission(),
+                    ChatUtils.splitAndColorLines(handlerAnnotation.description()));
 
-            // Handle state information
-            SubCommand cmd = invoker.getSubCommand();
-            Map<Integer, FragmentHandleInvoker> invokersForSub = invokers.get(cmd);
-            if (invokersForSub == null) {
-                invokersForSub = new HashMap<>();
-                invokers.put(cmd, invokersForSub);
-                invokersForSub.put(handlerAnnotation.state(), invoker);
-            } else {
-                if (invokersForSub.containsKey(handlerAnnotation.state())) {
-                    lib.getHook().getLogger().log(Level.WARNING, "Overwriting handle for " + cmd.toString() + " with " + method.getName() + " because both fragments have the same sub command and state.");
-                }
-                invokersForSub.put(handlerAnnotation.state(), invoker);
-            }
-            lib.getHook().getLogger().log(Level.INFO, "Successfully registered fragment " + method.getName() + " in " + commandHandler.getClass().getSimpleName() + " for " + cmd.toString() + " when in state " + handlerAnnotation.state());
+            SubCommand trigger = this.getSubCommand(command);
+            Map<Integer, CommandMethodHandle> variants = commandHandles.computeIfAbsent(trigger, t -> new HashMap<>());
+
+            if (variants.containsKey(handlerAnnotation.state()))
+                lib.getHook().getLogger().log(Level.WARNING, "Overwriting handle for " + trigger.toString() + " with " + method.getName() + " because both fragments have the same sub command and state.");
+
+            variants.put(handlerAnnotation.state(), handle);
+            lib.getHook().getLogger().log(Level.INFO, "Registering fragment " + method.getName() + " in " + commandHandler.getClass().getSimpleName() + " for " + trigger.toString() + " when in state " + handlerAnnotation.state());
         }
 
-        for (Map.Entry<SubCommand, Map<Integer, FragmentHandleInvoker>> entry : invokers.entrySet()) {
-            bundle.addSubCommand(entry.getKey(), intMapToArray(entry.getValue()));
-            this.invokers.put(entry.getKey(), bundle);
-        }
+        // All the commands need to share the context provider
+        SimpleContextProvider<T> provider = new SimpleContextProvider<>(supplier::get);
+
+        commandHandles.forEach((trigger, variants) -> {
+            CommandExecutor executor = new ContextSensitiveCommand<>(trigger, variants, provider);
+
+            this.executors.put(trigger, executor);
+
+            lib.getHook().getLogger().log(Level.INFO, "Successfully registered variants for " + trigger.toString());
+        });
     }
 
-    private FragmentHandleInvoker buildFragmentInvoker(Method method, FragmentedCommandHandler commandHandler, Class<?> contextType, String[] command, String permission, String description) throws HandlerCompilationException {
+    private CommandMethodHandle buildFragmentHandle(Method method, Object commandHandler, Class<?> contextType, String[] command, String permission, List<String> desc) throws HandlerCompilationException {
         MethodDescriptor methodDesc = MethodDescriptor.fromMethod(method);
 
-        List<CommandParameter<?>> cmdParams = this.compileParams(methodDesc, CTX_SENSITIVE_IMPLICIT_PARAMS_IDX);
+        CommandParameters cmdParams = this.compileParams(methodDesc, CTX_SENSITIVE_IMPLICIT_PARAMS_IDX);
         Parameter ctxParam = checkImplicitParam(methodDesc, "context", CTX_SENSITIVE_CONTEXT_PARAM_IDX, contextType);
         Parameter senderParam = checkImplicitParam(methodDesc, "sender", CTX_SENSITIVE_SENDER_PARAM_IDX, Player.class);
 
@@ -170,20 +177,42 @@ public class CommandRegistry implements Listener {
         if (cmd == null)
             throw new HandlerCompilationException(methodDesc, "Invalid sub command %s.", Arrays.toString(command));
 
-        return new FragmentHandleInvoker(cmd, description, commandHandler, method, senderParam.getType(), cmdParams);
+        MethodHandle methodHandle;
+        try {
+            method.setAccessible(true);
+            methodHandle = MethodHandles.lookup()
+                    .unreflect(method)
+                    .bindTo(commandHandler);
+        } catch (IllegalAccessException e) {
+            throw new HandlerCompilationException(methodDesc, "Error accessing method.", e);
+        }
+
+        return new CommandMethodHandle(senderParam.getType(), cmdParams, desc, methodHandle);
     }
 
-    private void registerSingleMethod(Method method, Object commandHandler, String[] command, String permission, String description) throws HandlerCompilationException {
+    private CommandExecutor buildContextInsensitiveCommand(Method method, Object commandHandler, String[] command, String permission, List<String> desc) throws HandlerCompilationException {
         MethodDescriptor methodDesc = MethodDescriptor.fromMethod(method);
 
-        List<CommandParameter<?>> cmdParams = this.compileParams(methodDesc, CTX_INSENSITIVE_IMPLICIT_PARAMS_IDX);
+        CommandParameters cmdParams = this.compileParams(methodDesc, CTX_INSENSITIVE_IMPLICIT_PARAMS_IDX);
         Parameter senderParam = checkImplicitParam(methodDesc, "sender", CTX_INSENSITIVE_SENDER_PARAM_IDX, CommandSender.class);
 
         SubCommand cmd = this.addSubCommand(command, permission);
         if (cmd == null)
             throw new HandlerCompilationException(methodDesc, "Invalid sub command %s.", Arrays.toString(command));
 
-        this.invokers.put(cmd, new HandleInvoker(cmd, description, commandHandler, method, senderParam.getType(), cmdParams));
+        MethodHandle methodHandle;
+        try {
+            method.setAccessible(true);
+            methodHandle = MethodHandles.lookup()
+                    .unreflect(method)
+                    .bindTo(commandHandler);
+        } catch (IllegalAccessException e) {
+            throw new HandlerCompilationException(methodDesc, "Error accessing method.", e);
+        }
+
+        CommandMethodHandle handle = new CommandMethodHandle(senderParam.getType(), cmdParams, desc, methodHandle);
+
+        return new ContextInsensitiveCommand(cmd, handle);
     }
 
     private String[] buildCommand(String[] prefix, String[] cmd, String fallback) {
@@ -209,29 +238,17 @@ public class CommandRegistry implements Listener {
         return param;
     }
 
+    private CommandParameters compileParams(MethodDescriptor method, BitSet skip) throws HandlerCompilationException {
+        List<Parameter> methodParams = method.getParameters();
 
-    private void checkArgFlow(MethodDescriptor method, List<CommandParameter<?>> args) throws HandlerCompilationException {
-        CommandParameter<?> lastOptional = null;
-
-        for (CommandParameter<?> arg : args) {
-            if (arg.isOptional())
-                lastOptional = arg;
-            else if (lastOptional != null)
-                throw new HandlerCompilationException(method, "Required argument %s cannot follow an optional argument (%s).", arg.getName(), lastOptional.getName());
-        }
-    }
-
-    private List<CommandParameter<?>> compileParams(MethodDescriptor method, BitSet skip) throws HandlerCompilationException {
-        List<Parameter> params = method.getParameters();
-
-        List<CommandParameter<?>> args = new ArrayList<>(params.size() - skip.cardinality());
+        List<CommandParameter<?>> cmdParams = new ArrayList<>(methodParams.size() - skip.cardinality());
         int argIdx = -1;
-        for (int i = 0; i < params.size(); i++) {
+        for (int i = 0; i < methodParams.size(); i++) {
             if (skip.get(i))
                 continue;
             argIdx++;
 
-            Parameter p = params.get(i);
+            Parameter p = methodParams.get(i);
 
             ArgDescription argDesc = p.getAnnotation(ArgDescription.class);
 
@@ -258,14 +275,16 @@ public class CommandRegistry implements Listener {
             if (formatter == null)
                 throw new HandlerCompilationException(method, "Unknown argument type %s for parameter %s.", p.getType().getSimpleName(), name);
 
-            CommandParameter<?> arg = new CommandParameter<>(kind, formatter, p.getType(), name, desc);
+            CommandParameter<?> param = new CommandParameter<>(kind, formatter, p.getType(), name, desc);
 
-            args.add(arg);
+            cmdParams.add(param);
         }
 
-        checkArgFlow(method, args);
-
-        return args;
+        try {
+            return CommandParameters.fromList(cmdParams);
+        } catch (IllegalArgumentException e) {
+            throw new HandlerCompilationException(method, e.getMessage());
+        }
     }
 
     protected SubCommand getSubCommand(String[] command) {
@@ -335,7 +354,7 @@ public class CommandRegistry implements Listener {
             this.baseCommands.put(alias.toLowerCase(), base);
 
         this.bukkitCommandMap.register(base.getName(), this.lib.getHook().getName().toLowerCase(),
-                new BaseCommand(this.lib, base.getName(), "/" + base.getName(), "/" + base.getName(), base.getAliases()));
+                new BukkitInterceptorCommand(this.lib, base.getName(), "/" + base.getName(), "/" + base.getName(), base.getAliases()));
 
         return base;
     }
@@ -348,6 +367,7 @@ public class CommandRegistry implements Listener {
      * @return a List containing the possible sub commands that may follow, will never return null
      */
     public List<String> getPossibleSubCommands(String[] enteredCommand) {
+        // TODO not case insensitive
         SubCommand sub = this.getSubCommand(enteredCommand);
         if (sub == null) {
             //Try to partially fix the last arg
@@ -380,38 +400,52 @@ public class CommandRegistry implements Listener {
      * @throws CommandException if an error occurs while handling the command.
      */
     protected boolean handleCommand(CommandSender sender, String[] command) throws CommandException {
-        if (command == null || command.length < 1) throw new IllegalArgumentException("command was empty");
+        if (command == null || command.length < 1)
+            throw new IllegalArgumentException("command was empty");
+
         SubCommand cmd = this.getBaseCommand(command[0]);
-        if (cmd == null) {
+        if (cmd == null)
             return false;
-        }
+
         SubCommand next;
         int i;
         for (i = 1; i < command.length; i++) {
             next = cmd.getSubCommand(command[i]);
-            if (next == null) break; //We went as far as we could go
+            if (next == null) break; // We went as far as we could go
             else cmd = next;
         }
+
         if (!cmd.canBeExecutedBy(sender)) {
             sender.sendMessage(ChatColor.RED + "You do not have permission to execute " + cmd.toString() + ".");
             return true;
         }
-        //Invoke the command
-        Invoker invoker = this.invokers.get(cmd);
-        if (invoker == null) {
+
+        // Invoke the command
+        CommandExecutor executor = this.executors.get(cmd);
+        if (executor == null)
             return false;
+
+        if (!executor.canExecute(sender)) {
+            sender.sendMessage(ChatColor.RED + "Cannot execute " + cmd.toString() + " in your current state.");
+            return true;
         }
-        //i is index of first arg
+
+        // i is index of first arg
         try {
-            invoker.invoke(cmd, sender, i < command.length ? Arrays.copyOfRange(command, i, command.length) : new String[0]);
+            List<String> args = i < command.length
+                    ? Arrays.asList(command).subList(i, command.length)
+                    : Collections.emptyList();
+
+            executor.execute(sender, args);
         } catch (Exception e) {
             throw new CommandException(e);
         }
+
         return true;
     }
 
     public void displayHelp(CommandSender sender, String[] partialCmdRaw) {
-        Predicate<SubCommand> filter;
+        Stream<SubCommand> cmds = this.executors.keySet().stream();
 
         if (partialCmdRaw.length > 0) {
             SubCommand partialCmd = this.getSubCommand(partialCmdRaw);
@@ -420,32 +454,18 @@ public class CommandRegistry implements Listener {
                 return;
             }
 
-            filter = cmd -> cmd.startsWith(partialCmd) && cmd.canBeExecutedBy(sender);
-        } else {
-            filter = cmd -> cmd.canBeExecutedBy(sender);
+            cmds = cmds.filter(cmd -> cmd.startsWith(partialCmd));
         }
 
-        List<SubCommand> matching = this.invokers.keySet().stream()
-                .filter(filter)
+        List<CommandExecutor> matching = cmds
                 .sorted()
+                .map(this.executors::get)
+                .filter(Objects::nonNull)
                 .collect(Collectors.toList());
 
         if (matching.isEmpty())
             sender.sendMessage(ChatColor.RED + "No commands you are allowed to execute match the query.");
         else
-            matching.forEach(cmd ->
-                    this.invokers.get(cmd)
-                            .sendDescription(cmd, sender));
-    }
-
-    private FragmentHandleInvoker[] intMapToArray(Map<Integer, FragmentHandleInvoker> map) {
-        int max = -1;
-        for (int i : map.keySet())
-            if (i > max) max = i;
-        FragmentHandleInvoker[] invokers = new FragmentHandleInvoker[max + 1];
-        for (int i = 0; i < invokers.length; i++) {
-            invokers[i] = map.get(i);
-        }
-        return invokers;
+            matching.forEach(executor -> executor.sendDescription(sender));
     }
 }

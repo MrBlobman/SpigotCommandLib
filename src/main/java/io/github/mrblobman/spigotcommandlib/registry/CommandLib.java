@@ -24,6 +24,7 @@
 package io.github.mrblobman.spigotcommandlib.registry;
 
 import io.github.mrblobman.spigotcommandlib.*;
+import io.github.mrblobman.spigotcommandlib.invocation.CommandMethodHandle;
 import org.bukkit.command.CommandSender;
 import org.bukkit.plugin.Plugin;
 
@@ -51,7 +52,7 @@ public class CommandLib {
      *
      * @param handler the command handler
      *
-     * @see CommandHandle
+     * @see CommandMethodHandle
      */
     public void registerCommandHandler(CommandHandler handler) throws HandlerCompilationException {
         registry.register(handler);

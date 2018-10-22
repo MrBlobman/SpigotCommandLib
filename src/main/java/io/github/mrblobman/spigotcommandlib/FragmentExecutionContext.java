@@ -30,6 +30,8 @@ package io.github.mrblobman.spigotcommandlib;
  * may be on a class that extends this base.
  */
 public class FragmentExecutionContext {
+    public static final int DEFAULT_STATE = 0;
+
     private int state;
 
     public FragmentExecutionContext() {

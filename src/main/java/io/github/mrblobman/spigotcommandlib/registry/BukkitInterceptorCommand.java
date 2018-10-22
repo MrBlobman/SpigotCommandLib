@@ -36,12 +36,12 @@ import java.util.regex.Pattern;
 /**
  * A bridge from a {@link Command} to our custom registry.
  */
-public class BaseCommand extends Command {
+public class BukkitInterceptorCommand extends Command {
     private static final Pattern ARG_PATTERN = Pattern.compile("(?:(['\"])(.*?)(?<!\\\\)(?>\\\\\\\\)*\\1|([^\\s]+))");
 
     private CommandLib lib;
 
-    BaseCommand(CommandLib lib, String name, String description, String usageMessage, List<String> aliases) {
+    BukkitInterceptorCommand(CommandLib lib, String name, String description, String usageMessage, List<String> aliases) {
         super(name, description, usageMessage, aliases);
         this.lib = lib;
     }
@@ -96,6 +96,8 @@ public class BaseCommand extends Command {
      * @return the properly split command
      */
     private String[] parseCommandString(String command, boolean appendExtraSpace) {
+        // TODO this isn't true whitespace concat as we dont intercept the command early enough
+        // TODO it has already been split on whitespace meaning all whitespace is contracted to a single space.
         if (command.startsWith("/")) {
             command = command.substring(1);
         }
